@@ -33,38 +33,32 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/admin?view=entries" passHref>
-                <SidebarMenuButton asChild isActive={view === "entries"}>
-                  <>
-                    <FileText />
-                    <span>Entri Survei</span>
-                  </>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton asChild isActive={view === "entries"}>
+                <Link href="/admin?view=entries">
+                  <FileText />
+                  <span>Entri Survei</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/admin?view=questions" passHref>
-                <SidebarMenuButton asChild isActive={view === "questions"}>
-                  <>
-                    <Settings />
-                    <span>Manajemen Pertanyaan</span>
-                  </>
-                </SidebarMenuButton>
-              </Link>
+              <SidebarMenuButton asChild isActive={view === "questions"}>
+                <Link href="/admin?view=questions">
+                  <Settings />
+                  <span>Manajemen Pertanyaan</span>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="border-t">
           <SidebarMenu>
              <SidebarMenuItem>
-                <Link href="/" passHref>
-                  <SidebarMenuButton asChild>
-                    <>
-                      <Home />
-                      <span>Halaman Depan</span>
-                    </>
-                  </SidebarMenuButton>
-                </Link>
+                <SidebarMenuButton asChild>
+                  <Link href="/">
+                    <Home />
+                    <span>Halaman Depan</span>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={onLogout}>
