@@ -119,13 +119,21 @@ export function SurveyForm() {
     const authenticate = async () => {
       try {
         await signInAnonymously(auth);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error signing in anonymously: ", error);
-        toast({
-          variant: "destructive",
-          title: "Gagal Autentikasi",
-          description: "Tidak dapat terhubung ke server. Mohon muat ulang halaman.",
-        });
+        if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/admin-restricted-operation') {
+            toast({
+                variant: "destructive",
+                title: "Login Anonim Belum Diaktifkan",
+                description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
+            });
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Gagal Autentikasi",
+              description: "Tidak dapat terhubung ke server. Mohon muat ulang halaman.",
+            });
+        }
       } finally {
         setIsSigningIn(false);
       }
