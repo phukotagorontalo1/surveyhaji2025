@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation"
 import { Check, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { ref, uploadString, getDownloadURL } from "firebase/storage"
+import { db, storage } from "@/lib/firebase"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -116,8 +117,15 @@ export function SurveyForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
+      // 1. Upload signature to Firebase Storage
+      const signatureRef = ref(storage, `signatures/${Date.now()}.png`);
+      const uploadResult = await uploadString(signatureRef, values.tandaTangan, 'data_url');
+      const signatureUrl = await getDownloadURL(uploadResult.ref);
+
+      // 2. Add document to Firestore with the signature URL
       await addDoc(collection(db, "surveys"), {
         ...values,
+        tandaTangan: signatureUrl, // Replace base64 with URL
         createdAt: serverTimestamp(),
       });
 
