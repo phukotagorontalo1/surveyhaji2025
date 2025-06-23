@@ -69,7 +69,7 @@ const PERBAIKAN_ITEMS = [
 ] as const;
 
 const formSchema = z.object({
-  nama: z.string().min(2, { message: "Nama lengkap harus diisi." }),
+  nama: z.string().optional(),
   nomorHp: z.string().min(10, { message: "Nomor HP tidak valid." }),
   pekerjaan: z.string({ required_error: "Pekerjaan harus dipilih." }),
   usia: z.string({ required_error: "Usia harus dipilih." }),
@@ -138,7 +138,7 @@ export function SurveyForm() {
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField control={form.control} name="nama" render={({ field }) => (
-              <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input placeholder="Masukkan nama lengkap Anda" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Nama Lengkap (Opsional)</FormLabel><FormControl><Input placeholder="Masukkan nama lengkap Anda" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="nomorHp" render={({ field }) => (
               <FormItem><FormLabel>Nomor HP</FormLabel><FormControl><Input type="tel" placeholder="Contoh: 081234567890" {...field} /></FormControl><FormMessage /></FormItem>
