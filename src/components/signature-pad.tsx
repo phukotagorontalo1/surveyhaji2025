@@ -3,6 +3,17 @@
 import { useRef, useEffect, type TouchEvent, type MouseEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { CornerDownLeft } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface SignaturePadProps {
   onChange: (dataUrl: string) => void;
@@ -103,10 +114,26 @@ export function SignaturePad({ onChange }: SignaturePadProps) {
         onTouchEnd={stopDrawing}
         className="w-full h-48 bg-gray-100 rounded-md border border-input cursor-crosshair touch-none"
       />
-      <Button type="button" variant="outline" size="sm" onClick={clearPad} className="mt-2">
-        <CornerDownLeft className="mr-2 h-4 w-4" />
-        Bersihkan
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="mt-2">
+            <CornerDownLeft className="mr-2 h-4 w-4" />
+            Bersihkan
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus Tanda Tangan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin membersihkan area tanda tangan? Tanda tangan yang sudah digambar akan hilang.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={clearPad}>Ya, Bersihkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
