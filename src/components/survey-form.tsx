@@ -39,22 +39,22 @@ const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun"
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
 const KUALITAS_QUESTIONS = [
-    { id: 'q1', label: 'Persyaratan pelayanan yang mudah dipahami.' },
-    { id: 'q2', label: 'Prosedur pelayanan yang tidak berbelit-belit.' },
-    { id: 'q3', label: 'Waktu penyelesaian pelayanan yang cepat dan tepat.' },
-    { id: 'q4', label: 'Kewajaran biaya/tarif dalam pelayanan.' },
-    { id: 'q5', label: 'Kualitas hasil pelayanan yang diberikan.' },
-    { id: 'q6', label: 'Kompetensi dan profesionalisme petugas pelayanan.' },
-    { id: 'q7', label: 'Sikap petugas pelayanan yang ramah dan sopan.' },
-    { id: 'q8', label: 'Kualitas sarana dan prasarana pendukung pelayanan.' },
+    { id: 'q1', label: 'Persyaratan pelayanan yang mudah dipahami.', ratings: { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" } },
+    { id: 'q2', label: 'Prosedur pelayanan yang tidak berbelit-belit.', ratings: { 1: "Sangat Berbelit", 2: "Berbelit", 3: "Cukup Jelas", 4: "Jelas", 5: "Sangat Jelas", 6: "Sempurna" } },
+    { id: 'q3', label: 'Waktu penyelesaian pelayanan yang cepat dan tepat.', ratings: { 1: "Sangat Lambat", 2: "Lambat", 3: "Cukup Cepat", 4: "Cepat", 5: "Sangat Cepat", 6: "Sempurna" } },
+    { id: 'q4', label: 'Kewajaran biaya/tarif dalam pelayanan.', ratings: { 1: "Sangat Mahal", 2: "Mahal", 3: "Cukup Wajar", 4: "Wajar", 5: "Sangat Wajar", 6: "Sempurna" } },
+    { id: 'q5', label: 'Kualitas hasil pelayanan yang diberikan.', ratings: { 1: "Sangat Buruk", 2: "Buruk", 3: "Cukup Baik", 4: "Baik", 5: "Sangat Baik", 6: "Sempurna" } },
+    { id: 'q6', label: 'Kompetensi dan profesionalisme petugas pelayanan.', ratings: { 1: "Sangat Tdk Kompeten", 2: "Tdk Kompeten", 3: "Cukup Kompeten", 4: "Kompeten", 5: "Sangat Kompeten", 6: "Sempurna" } },
+    { id: 'q7', label: 'Sikap petugas pelayanan yang ramah dan sopan.', ratings: { 1: "Sangat Tdk Ramah", 2: "Tdk Ramah", 3: "Cukup Ramah", 4: "Ramah", 5: "Sangat Ramah", 6: "Sempurna" } },
+    { id: 'q8', label: 'Kualitas sarana dan prasarana pendukung pelayanan.', ratings: { 1: "Sangat Tdk Memadai", 2: "Tdk Memadai", 3: "Cukup Memadai", 4: "Memadai", 5: "Sangat Memadai", 6: "Sempurna" } },
 ];
 
 const PENYIMPANGAN_QUESTIONS = [
-    { id: 'p1', label: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.' },
-    { id: 'p2', label: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.' },
-    { id: 'p3', label: 'Tidak adanya praktik percaloan dalam pengurusan layanan.' },
-    { id: 'p4', label: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.' },
-    { id: 'p5', label: 'Ketersediaan dan kemudahan akses sistem pengaduan.' },
+    { id: 'p1', label: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
+    { id: 'p2', label: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
+    { id: 'p3', label: 'Tidak adanya praktik percaloan dalam pengurusan layanan.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
+    { id: 'p4', label: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
+    { id: 'p5', label: 'Ketersediaan dan kemudahan akses sistem pengaduan.', ratings: { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" } },
 ];
 
 const PERBAIKAN_ITEMS = [
@@ -182,7 +182,7 @@ export function SurveyForm() {
               <FormField key={q.id} control={form.control} name={`kualitas.${q.id}`} render={({ field }) => (
                 <FormItem>
                   <FormLabel>{index + 1}. {q.label}</FormLabel>
-                  <FormControl><StarRating value={field.value} onChange={field.onChange} /></FormControl>
+                  <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -200,7 +200,7 @@ export function SurveyForm() {
               <FormField key={q.id} control={form.control} name={`penyimpangan.${q.id}`} render={({ field }) => (
                 <FormItem>
                   <FormLabel>{index + 1}. {q.label}</FormLabel>
-                  <FormControl><StarRating value={field.value} onChange={field.onChange} /></FormControl>
+                  <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

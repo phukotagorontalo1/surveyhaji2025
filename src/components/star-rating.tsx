@@ -8,9 +8,10 @@ interface StarRatingProps {
   value: number;
   onChange: (value: number) => void;
   totalStars?: number;
+  labels?: { [key: number]: string };
 }
 
-const ratingLabels: { [key: number]: string } = {
+const defaultRatingLabels: { [key: number]: string } = {
     1: "Sangat Tidak Memadai",
     2: "Tidak Memadai",
     3: "Cukup",
@@ -19,7 +20,7 @@ const ratingLabels: { [key: number]: string } = {
     6: "Sempurna",
 };
 
-export function StarRating({ value, onChange, totalStars = 6 }: StarRatingProps) {
+export function StarRating({ value, onChange, totalStars = 6, labels = defaultRatingLabels }: StarRatingProps) {
   const [hoverValue, setHoverValue] = useState(0);
 
   return (
@@ -51,7 +52,7 @@ export function StarRating({ value, onChange, totalStars = 6 }: StarRatingProps)
         </div>
         {value > 0 && (
             <p className="text-sm text-muted-foreground mt-2 sm:mt-0 font-medium bg-secondary px-3 py-1 rounded-full">
-                {ratingLabels[value]}
+                {labels[value]}
             </p>
         )}
     </div>
