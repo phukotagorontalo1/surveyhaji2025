@@ -7,13 +7,14 @@ import { collection, getDocs, query, orderBy, Timestamp, doc, deleteDoc } from "
 import { db } from "@/lib/firebase"
 import Image from "next/image"
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Trash2, Shield, LogIn, Eye, EyeOff, LogOut, Search, FileDown, CheckCircle2, XCircle } from "lucide-react"
 
@@ -300,7 +301,7 @@ export default function AdminPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
                             <CardTitle>Entri Survei</CardTitle>
-                             <CardDescription>Ditemukan {displayedSurveys.length} dari {surveys.length} total entri. Klik untuk melihat detail.</CardDescription>
+                             <CardDescription>Ditemukan {displayedSurveys.length} dari {surveys.length} total entri.</CardDescription>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <div className="relative">
@@ -347,89 +348,116 @@ export default function AdminPage() {
                     ) : displayedSurveys.length === 0 ? (
                         <p className="text-center text-muted-foreground py-8">Tidak ada data yang cocok dengan pencarian Anda.</p>
                     ) : (
-                        <Accordion type="single" collapsible className="w-full">
-                            {displayedSurveys.map(survey => {
-                                const { ikm, ipak } = calculateScores(survey);
-                                return (
-                                <AccordionItem value={survey.id} key={survey.id}>
-                                    <AccordionTrigger className="hover:bg-muted/50 px-4 rounded-md">
-                                        <div className="flex-1 text-left flex flex-col md:flex-row md:items-center md:justify-between">
-                                            <div className="font-medium">{survey.nama || "Anonim"} - <span className="font-normal text-muted-foreground">{survey.createdAt.toDate().toLocaleString('id-ID')}</span></div>
-                                            <div className="flex gap-4 text-sm mt-1 md:mt-0">
-                                                <span>IKM: <span className="font-bold">{ikm.toFixed(2)}</span></span>
-                                                <span>IPAK: <span className="font-bold">{ipak.toFixed(2)}</span></span>
-                                            </div>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="p-4 border-t bg-muted/20">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="md:col-span-2 space-y-6">
-                                                <div>
-                                                    <h4 className="font-bold text-lg mb-2">I. Detail Responden</h4>
-                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                                        <p><strong>Nama:</strong> {survey.nama || "Tidak diisi"}</p>
-                                                        <p><strong>No. HP:</strong> {survey.nomorHp}</p>
-                                                        <p><strong>Pekerjaan:</strong> {survey.pekerjaan}</p>
-                                                        <p><strong>Usia:</strong> {survey.usia}</p>
-                                                        <p><strong>Jenis Kelamin:</strong> {survey.jenisKelamin}</p>
-                                                        <p><strong>Pendidikan:</strong> {survey.pendidikan}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                    <div>
-                                                        <h4 className="font-bold text-lg mb-2">II. Jawaban Kualitas Pelayanan</h4>
-                                                        <ul className="space-y-1 text-sm">
-                                                            {Object.entries(survey.kualitas).map(([key, value]) => (
-                                                                <li key={key} className="flex justify-between"><span>{KUALITAS_QUESTIONS_LABELS[key]}:</span> <strong>{value}/6</strong></li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-lg mb-2">III. Jawaban Penyimpangan</h4>
-                                                        <ul className="space-y-1 text-sm">
-                                                            {Object.entries(survey.penyimpangan).map(([key, value]) => (
-                                                                <li key={key} className="flex justify-between"><span>{PENYIMPANGAN_QUESTIONS_LABELS[key]}:</span> <strong>{value}/6</strong></li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-lg mb-2">IV. Evaluasi & Verifikasi</h4>
-                                                    <div className="space-y-2 text-sm">
-                                                        <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => PERBAIKAN_LABELS[p] || p).join(', ')}</p>
-                                                        <div>
-                                                            <p><strong>Saran:</strong></p>
-                                                            <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saran || "Tidak ada saran."}</blockquote>
-                                                        </div>
-                                                         <div className="flex items-center gap-2">
-                                                            <p><strong>Pernyataan mandiri:</strong></p>
-                                                            {survey.tidakDiarahkan ? (
-                                                                <span className="inline-flex items-center gap-1 text-green-700 font-medium">
-                                                                    <CheckCircle2 className="h-4 w-4" /> Disetujui
-                                                                </span>
-                                                            ) : (
-                                                                <span className="inline-flex items-center gap-1 text-destructive font-medium">
-                                                                    <XCircle className="h-4 w-4" /> Tidak disetujui
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Responden</TableHead>
+                                        <TableHead>Tanggal</TableHead>
+                                        <TableHead>IKM</TableHead>
+                                        <TableHead>IPAK</TableHead>
+                                        <TableHead className="text-right">Aksi</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {displayedSurveys.map(survey => {
+                                        const { ikm, ipak } = calculateScores(survey);
+                                        return (
+                                        <TableRow key={survey.id}>
+                                            <TableCell>
+                                                <div className="font-medium">{survey.nama || 'Anonim'}</div>
+                                                <div className="text-sm text-muted-foreground">{survey.nomorHp}</div>
+                                            </TableCell>
+                                            <TableCell>{survey.createdAt.toDate().toLocaleString('id-ID')}</TableCell>
+                                            <TableCell>{ikm.toFixed(2)}</TableCell>
+                                            <TableCell>{ipak.toFixed(2)}</TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-end gap-2">
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" size="icon" className="h-8 w-8">
+                                                                <Eye className="h-4 w-4" />
+                                                                <span className="sr-only">Lihat Detail</span>
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                                            <DialogHeader>
+                                                                <DialogTitle>Detail Survei - {survey.nama || 'Anonim'}</DialogTitle>
+                                                                <DialogDescription>
+                                                                    Dikirim pada {survey.createdAt.toDate().toLocaleString('id-ID')}
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+                                                                <div className="md:col-span-2 space-y-6">
+                                                                    <div>
+                                                                        <h4 className="font-bold text-lg mb-2">I. Detail Responden</h4>
+                                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                                                            <p><strong>Nama:</strong> {survey.nama || "Tidak diisi"}</p>
+                                                                            <p><strong>No. HP:</strong> {survey.nomorHp}</p>
+                                                                            <p><strong>Pekerjaan:</strong> {survey.pekerjaan}</p>
+                                                                            <p><strong>Usia:</strong> {survey.usia}</p>
+                                                                            <p><strong>Jenis Kelamin:</strong> {survey.jenisKelamin}</p>
+                                                                            <p><strong>Pendidikan:</strong> {survey.pendidikan}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                        <div>
+                                                                            <h4 className="font-bold text-lg mb-2">II. Jawaban Kualitas Pelayanan</h4>
+                                                                            <ul className="space-y-1 text-sm">
+                                                                                {Object.entries(survey.kualitas).map(([key, value]) => (
+                                                                                    <li key={key} className="flex justify-between"><span>{KUALITAS_QUESTIONS_LABELS[key]}:</span> <strong>{value}/6</strong></li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="font-bold text-lg mb-2">III. Jawaban Penyimpangan</h4>
+                                                                            <ul className="space-y-1 text-sm">
+                                                                                {Object.entries(survey.penyimpangan).map(([key, value]) => (
+                                                                                    <li key={key} className="flex justify-between"><span>{PENYIMPANGAN_QUESTIONS_LABELS[key]}:</span> <strong>{value}/6</strong></li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-bold text-lg mb-2">IV. Evaluasi & Verifikasi</h4>
+                                                                        <div className="space-y-2 text-sm">
+                                                                            <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => PERBAIKAN_LABELS[p] || p).join(', ')}</p>
+                                                                            <div>
+                                                                                <p><strong>Saran:</strong></p>
+                                                                                <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saran || "Tidak ada saran."}</blockquote>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <p><strong>Pernyataan mandiri:</strong></p>
+                                                                                {survey.tidakDiarahkan ? (
+                                                                                    <span className="inline-flex items-center gap-1 text-green-700 font-medium">
+                                                                                        <CheckCircle2 className="h-4 w-4" /> Disetujui
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="inline-flex items-center gap-1 text-destructive font-medium">
+                                                                                        <XCircle className="h-4 w-4" /> Tidak disetujui
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
 
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <h4 className="font-bold text-lg mb-2">Tanda Tangan</h4>
-                                                    {survey.tandaTangan ? (
-                                                        <Image src={survey.tandaTangan} alt="Tanda Tangan Responden" width={200} height={100} className="rounded-md border bg-white" />
-                                                    ) : <p className="text-sm text-muted-foreground">Tidak ada tanda tangan.</p>}
-                                                </div>
-                                                <div className="pt-4">
-                                                     <AlertDialog>
+                                                                <div className="space-y-4">
+                                                                    <div>
+                                                                        <h4 className="font-bold text-lg mb-2">Tanda Tangan</h4>
+                                                                        {survey.tandaTangan ? (
+                                                                            <Image src={survey.tandaTangan} alt="Tanda Tangan Responden" width={200} height={100} className="rounded-md border bg-white" />
+                                                                        ) : <p className="text-sm text-muted-foreground">Tidak ada tanda tangan.</p>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                    <AlertDialog>
                                                         <AlertDialogTrigger asChild>
-                                                            <Button variant="destructive" size="sm">
-                                                                <Trash2 className="mr-2 h-4 w-4"/>
-                                                                Hapus Entri
+                                                            <Button variant="destructive" size="icon" className="h-8 w-8">
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span className="sr-only">Hapus Entri</span>
                                                             </Button>
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
@@ -446,13 +474,13 @@ export default function AdminPage() {
                                                         </AlertDialogContent>
                                                     </AlertDialog>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                                )
-                            })}
-                        </Accordion>
+                                            </TableCell>
+                                        </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>
