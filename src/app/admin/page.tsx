@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from "@/components/ui/sidebar"
+import { Sidebar, SidebarProvider, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from "@/components/ui/sidebar"
 import { Shield, LogIn, Eye, EyeOff, LogOut, FileText, Settings, Home, Loader2 } from "lucide-react"
 
 import SurveyEntries from "@/components/admin/SurveyEntries"
@@ -158,5 +158,9 @@ export default function AdminPage() {
         );
     }
     
-    return <AdminDashboardSuspenseWrapper onLogout={handleLogout} />
+    return (
+        <SidebarProvider>
+            <AdminDashboardSuspenseWrapper onLogout={handleLogout} />
+        </SidebarProvider>
+    );
 }
