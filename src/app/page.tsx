@@ -1,9 +1,11 @@
 import { SurveyForm } from '@/components/survey-form';
+import { DashboardDisplay } from '@/components/dashboard-display';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-5xl">
         <header className="text-center mb-8">
           <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary">
             Survey Kepuasan Masyarakat & Persepsi Anti Korupsi
@@ -15,7 +17,21 @@ export default function Home() {
             Kantor Kementerian Agama Kota Gorontalo
           </p>
         </header>
-        <SurveyForm />
+
+        <Tabs defaultValue="survey" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="survey">Isi Survey</TabsTrigger>
+            <TabsTrigger value="dashboard">Dashboard Hasil</TabsTrigger>
+          </TabsList>
+          <TabsContent value="survey" className="mt-6">
+            <div className="mx-auto max-w-2xl">
+              <SurveyForm />
+            </div>
+          </TabsContent>
+          <TabsContent value="dashboard" className="mt-6">
+            <DashboardDisplay />
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
