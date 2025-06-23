@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { Check, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { useState, useEffect, useMemo } from "react"
+import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
 import { db, auth } from "@/lib/firebase"
 import { signInAnonymously } from "firebase/auth"
 
@@ -36,40 +36,16 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { StarRating } from "@/components/star-rating"
 import { SignaturePad } from "@/components/signature-pad"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const PEKERJAAN_OPTIONS = ["Pelajar/Mahasiswa", "PNS", "BUMN/BUMD", "Swasta", "Pedagang", "Tani/Nelayan", "Ibu Rumah Tangga", "Lainnya"];
 const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun", "51-60 tahun", "Di atas 60 tahun"];
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
-const KUALITAS_QUESTIONS = [
-    { id: 'q1', label: 'Persyaratan pelayanan yang mudah dipahami.', ratings: { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" } },
-    { id: 'q2', label: 'Prosedur pelayanan yang tidak berbelit-belit.', ratings: { 1: "Sangat Berbelit", 2: "Berbelit", 3: "Cukup Jelas", 4: "Jelas", 5: "Sangat Jelas", 6: "Sempurna" } },
-    { id: 'q3', label: 'Waktu penyelesaian pelayanan yang cepat dan tepat.', ratings: { 1: "Sangat Lambat", 2: "Lambat", 3: "Cukup Cepat", 4: "Cepat", 5: "Sangat Cepat", 6: "Sempurna" } },
-    { id: 'q4', label: 'Kewajaran biaya/tarif dalam pelayanan.', ratings: { 1: "Sangat Mahal", 2: "Mahal", 3: "Cukup Wajar", 4: "Wajar", 5: "Sangat Wajar", 6: "Sempurna" } },
-    { id: 'q5', label: 'Kualitas hasil pelayanan yang diberikan.', ratings: { 1: "Sangat Buruk", 2: "Buruk", 3: "Cukup Baik", 4: "Baik", 5: "Sangat Baik", 6: "Sempurna" } },
-    { id: 'q6', label: 'Kompetensi dan profesionalisme petugas pelayanan.', ratings: { 1: "Sangat Tdk Kompeten", 2: "Tdk Kompeten", 3: "Cukup Kompeten", 4: "Kompeten", 5: "Sangat Kompeten", 6: "Sempurna" } },
-    { id: 'q7', label: 'Sikap petugas pelayanan yang ramah dan sopan.', ratings: { 1: "Sangat Tdk Ramah", 2: "Tdk Ramah", 3: "Cukup Ramah", 4: "Ramah", 5: "Sangat Ramah", 6: "Sempurna" } },
-    { id: 'q8', label: 'Kualitas sarana dan prasarana pendukung pelayanan.', ratings: { 1: "Sangat Tdk Memadai", 2: "Tdk Memadai", 3: "Cukup Memadai", 4: "Memadai", 5: "Sangat Memadai", 6: "Sempurna" } },
-];
-
-const PENYIMPANGAN_QUESTIONS = [
-    { id: 'p1', label: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
-    { id: 'p2', label: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
-    { id: 'p3', label: 'Tidak adanya praktik percaloan dalam pengurusan layanan.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
-    { id: 'p4', label: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.', ratings: { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" } },
-    { id: 'p5', label: 'Ketersediaan dan kemudahan akses sistem pengaduan.', ratings: { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" } },
-];
-
-const PERBAIKAN_ITEMS = [
-    { id: "kebijakan", label: "Kebijakan pelayanan" },
-    { id: "sdm", label: "Profesionalisme SDM" },
-    { id: "sarpras", label: "Kualitas Sarana dan Prasarana" },
-    { id: "sistem", label: "Sistem informasi dan pelayanan publik" },
-    { id: "konsultasi", label: "Konsultasi dan pengaduan" },
-    { id: "pungli", label: "Penghilangan Praktik pungli" },
-    { id: "prosedur", label: "Penghilangan praktik diluar prosedur" },
-    { id: "calo", label: "Penghilangan praktik percaloan" },
-] as const;
+// Default ratings, can be overridden if needed in the future
+const KUALITAS_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" };
+const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" };
+const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" };
 
 const formSchema = z.object({
   nama: z.string().optional(),
@@ -99,6 +75,8 @@ export function SurveyForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(true);
+  const [config, setConfig] = useState<any>(null);
+  const [loadingConfig, setLoadingConfig] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -138,13 +116,49 @@ export function SurveyForm() {
         setIsSigningIn(false);
       }
     };
+
+    const fetchConfig = async () => {
+      setLoadingConfig(true);
+      try {
+        const configDoc = await getDoc(doc(db, "config", "questions"));
+        if (configDoc.exists()) {
+          setConfig(configDoc.data());
+        } else {
+          // This should ideally not happen if admin page initializes it
+          toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
+        }
+      } catch (error) {
+        console.error("Error fetching config:", error);
+        toast({ variant: "destructive", title: "Gagal memuat konfigurasi survei." });
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+    
     authenticate();
+    fetchConfig();
   }, [toast]);
+  
+  const kualitasQuestions = useMemo(() => {
+      if (!config) return [];
+      return Object.entries(config.kualitas).map(([id, label]) => ({ id, label, ratings: KUALITAS_RATINGS }));
+  }, [config]);
+
+  const penyimpanganQuestions = useMemo(() => {
+      if (!config) return [];
+      // Special case for p5
+      return Object.entries(config.penyimpangan).map(([id, label]) => ({ id, label, ratings: id === 'p5' ? KETERSEDIAAN_RATINGS : PENYIMPANGAN_RATINGS }));
+  }, [config]);
+
+  const perbaikanItems = useMemo(() => {
+      if (!config) return [];
+      return Object.entries(config.perbaikan).map(([id, label]) => ({ id, label }));
+  }, [config]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      // Add document to Firestore with the Base64 signature
       await addDoc(collection(db, "surveys"), {
         ...values,
         createdAt: serverTimestamp(),
@@ -169,6 +183,21 @@ export function SurveyForm() {
       setIsSubmitting(false);
     }
   }
+
+  if (loadingConfig) {
+      return (
+          <div className="space-y-8">
+              <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
+              <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-6"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></CardContent></Card>
+              <Button className="w-full" disabled><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat Pertanyaan...</Button>
+          </div>
+      )
+  }
+  
+  if (!config) {
+      return <Card><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent><p>Konfigurasi survei tidak dapat dimuat. Silakan coba lagi nanti atau hubungi administrator.</p></CardContent></Card>
+  }
+
 
   return (
     <Form {...form}>
@@ -219,8 +248,8 @@ export function SurveyForm() {
             <CardDescription>Berikan penilaian Anda terhadap kualitas pelayanan haji yang telah diterima. Penilaian didasarkan pada pengalaman Anda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {KUALITAS_QUESTIONS.map((q, index) => (
-              <FormField key={q.id} control={form.control} name={`kualitas.${q.id}`} render={({ field }) => (
+            {kualitasQuestions.map((q: any, index: number) => (
+              <FormField key={q.id} control={form.control} name={`kualitas.${q.id as 'q1'}`} render={({ field }) => (
                 <FormItem>
                   <FormLabel>{index + 1}. {q.label}</FormLabel>
                   <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
@@ -237,8 +266,8 @@ export function SurveyForm() {
             <CardDescription>Berikan penilaian Anda mengenai ada atau tidaknya perilaku penyimpangan dalam pelayanan haji yang Anda alami.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {PENYIMPANGAN_QUESTIONS.map((q, index) => (
-              <FormField key={q.id} control={form.control} name={`penyimpangan.${q.id}`} render={({ field }) => (
+            {penyimpanganQuestions.map((q: any, index: number) => (
+              <FormField key={q.id} control={form.control} name={`penyimpangan.${q.id as 'p1'}`} render={({ field }) => (
                 <FormItem>
                   <FormLabel>{index + 1}. {q.label}</FormLabel>
                   <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
@@ -271,7 +300,7 @@ export function SurveyForm() {
                     <FormLabel className="text-base">Menurut Anda, apa yang perlu diperbaiki dari layanan kami?</FormLabel>
                     <FormDescription>Boleh pilih lebih dari satu.</FormDescription>
                   </div>
-                  {PERBAIKAN_ITEMS.map((item) => (
+                  {perbaikanItems.map((item: any) => (
                     <FormField key={item.id} control={form.control} name="perbaikan"
                       render={({ field }) => {
                         return (

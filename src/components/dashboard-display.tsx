@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore"
+import { collection, getDocs, query, orderBy, Timestamp, doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,17 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Loader2, FileDown, AreaChart, Users } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-
-const KUALITAS_QUESTIONS_LABELS: { [key: string]: string } = {
-    q1: 'Persyaratan',
-    q2: 'Prosedur',
-    q3: 'Waktu',
-    q4: 'Biaya/Tarif',
-    q5: 'Hasil Pelayanan',
-    q6: 'Kompetensi',
-    q7: 'Sikap Petugas',
-    q8: 'Sarana & Prasarana',
-};
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface SurveyData {
     id: string;
@@ -40,30 +30,45 @@ export function DashboardDisplay() {
     const [scores, setScores] = useState<CalculatedScores>({ ikm: 0, ipak: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [questionConfig, setQuestionConfig] = useState<any>(null);
     const { toast } = useToast();
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const q = query(collection(db, "surveys"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-                const surveyData: SurveyData[] = [];
-                querySnapshot.forEach((doc) => {
-                    surveyData.push({ id: doc.id, ...doc.data() } as SurveyData);
-                });
+                // Fetch config first
+                const configDoc = await getDoc(doc(db, "config", "questions"));
+                if (configDoc.exists()) {
+                    const configData = configDoc.data();
+                    setQuestionConfig(configData);
 
-                if (surveyData.length > 0) {
-                    calculateMetrics(surveyData);
+                    // Then fetch surveys
+                    const q = query(collection(db, "surveys"), orderBy("createdAt", "desc"));
+                    const querySnapshot = await getDocs(q);
+                    const surveyData: SurveyData[] = [];
+                    querySnapshot.forEach((doc) => {
+                        surveyData.push({ id: doc.id, ...doc.data() } as SurveyData);
+                    });
+
+                    if (surveyData.length > 0) {
+                        calculateMetrics(surveyData, configData);
+                    }
+                    
+                    setSurveys(surveyData);
+                } else {
+                     toast({
+                        variant: "destructive",
+                        title: "Konfigurasi tidak ditemukan",
+                        description: "Konfigurasi pertanyaan survei tidak ditemukan.",
+                    });
                 }
-                
-                setSurveys(surveyData);
 
             } catch (error) {
-                console.error("Error fetching survey data: ", error);
+                console.error("Error fetching data: ", error);
                 toast({
                     variant: "destructive",
                     title: "Gagal memuat data",
-                    description: "Terjadi kesalahan saat mengambil data survei.",
+                    description: "Terjadi kesalahan saat mengambil data dasbor.",
                 });
             } finally {
                 setLoading(false);
@@ -73,17 +78,20 @@ export function DashboardDisplay() {
         fetchData();
     }, [toast]);
 
-    const calculateMetrics = (data: SurveyData[]) => {
+    const calculateMetrics = (data: SurveyData[], config: any) => {
         let totalIkmScore = 0;
         let totalIpakScore = 0;
-        const kualitasTotals: { [key: string]: number } = Object.keys(KUALITAS_QUESTIONS_LABELS).reduce((acc, key) => ({...acc, [key]: 0}), {});
+        const kualitasQuestionKeys = Object.keys(config.kualitas);
+        const penyimpanganQuestionKeys = Object.keys(config.penyimpangan);
+
+        const kualitasTotals: { [key: string]: number } = kualitasQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
 
         data.forEach(survey => {
             const kualitasSum = Object.values(survey.kualitas).reduce((a, b) => a + b, 0);
-            totalIkmScore += (kualitasSum / (8 * 6)) * 100;
+            totalIkmScore += (kualitasSum / (kualitasQuestionKeys.length * 6)) * 100;
 
             const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
-            totalIpakScore += (penyimpanganSum / (5 * 6)) * 100;
+            totalIpakScore += (penyimpanganSum / (penyimpanganQuestionKeys.length * 6)) * 100;
             
             Object.keys(kualitasTotals).forEach(key => {
                 kualitasTotals[key] += survey.kualitas[key] || 0;
@@ -97,7 +105,7 @@ export function DashboardDisplay() {
         });
 
         const newChartData = Object.keys(kualitasTotals).map(key => ({
-            name: KUALITAS_QUESTIONS_LABELS[key],
+            name: config.kualitas[key],
             "Rata-rata Skor": numSurveys > 0 ? kualitasTotals[key] / numSurveys : 0,
         }));
         setChartData(newChartData);
@@ -154,7 +162,17 @@ export function DashboardDisplay() {
     };
 
     if (loading) {
-        return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+        return (
+             <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-4 w-32" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-4 w-28" /></CardHeader><CardContent><Skeleton className="h-7 w-10" /></CardContent></Card>
+                </div>
+                <Card><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><Skeleton className="h-[350px] w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent><Skeleton className="h-32 w-full" /></CardContent></Card>
+            </div>
+        )
     }
 
     if (surveys.length === 0) {

@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { collection, getDocs, query, orderBy, Timestamp, doc, deleteDoc } from "firebase/firestore"
+import { collection, getDocs, query, orderBy, Timestamp, doc, deleteDoc, getDoc, setDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import Image from "next/image"
 
@@ -16,38 +16,39 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Trash2, Shield, LogIn, Eye, EyeOff, LogOut, Search, FileDown, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, Trash2, Shield, LogIn, Eye, EyeOff, LogOut, Search, FileDown, CheckCircle2, XCircle, Save, Settings } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
 
-
-const KUALITAS_QUESTIONS_LABELS: { [key: string]: string } = {
-    q1: 'Persyaratan',
-    q2: 'Prosedur',
-    q3: 'Waktu',
-    q4: 'Biaya/Tarif',
-    q5: 'Hasil Pelayanan',
-    q6: 'Kompetensi',
-    q7: 'Sikap Petugas',
-    q8: 'Sarana & Prasarana',
-};
-
-const PENYIMPANGAN_QUESTIONS_LABELS: { [key: string]: string } = {
-    p1: 'Pungli',
-    p2: 'Di luar prosedur',
-    p3: 'Percaloan',
-    p4: 'Gratifikasi',
-    p5: 'Sistem pengaduan',
-};
-
-const PERBAIKAN_LABELS: { [key: string]: string } = {
-    kebijakan: "Kebijakan pelayanan",
-    sdm: "Profesionalisme SDM",
-    sarpras: "Kualitas Sarana dan Prasarana",
-    sistem: "Sistem informasi dan pelayanan publik",
-    konsultasi: "Konsultasi dan pengaduan",
-    pungli: "Penghilangan Praktik pungli",
-    prosedur: "Penghilangan praktik diluar prosedur",
-    calo: "Penghilangan praktik percaloan",
-    tidak_ada: "Tidak ada yang perlu diperbaiki"
+const DEFAULT_QUESTIONS = {
+    kualitas: {
+        q1: 'Persyaratan pelayanan yang mudah dipahami.',
+        q2: 'Prosedur pelayanan yang tidak berbelit-belit.',
+        q3: 'Waktu penyelesaian pelayanan yang cepat dan tepat.',
+        q4: 'Kewajaran biaya/tarif dalam pelayanan.',
+        q5: 'Kualitas hasil pelayanan yang diberikan.',
+        q6: 'Kompetensi dan profesionalisme petugas pelayanan.',
+        q7: 'Sikap petugas pelayanan yang ramah dan sopan.',
+        q8: 'Kualitas sarana dan prasarana pendukung pelayanan.',
+    },
+    penyimpangan: {
+        p1: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.',
+        p2: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.',
+        p3: 'Tidak adanya praktik percaloan dalam pengurusan layanan.',
+        p4: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.',
+        p5: 'Ketersediaan dan kemudahan akses sistem pengaduan.',
+    },
+    perbaikan: {
+        kebijakan: "Kebijakan pelayanan",
+        sdm: "Profesionalisme SDM",
+        sarpras: "Kualitas Sarana dan Prasarana",
+        sistem: "Sistem informasi dan pelayanan publik",
+        konsultasi: "Konsultasi dan pengaduan",
+        pungli: "Penghilangan Praktik pungli",
+        prosedur: "Penghilangan praktik diluar prosedur",
+        calo: "Penghilangan praktik percaloan",
+        tidak_ada: "Tidak ada yang perlu diperbaiki"
+    }
 };
 
 interface SurveyData {
@@ -79,15 +80,31 @@ export default function AdminPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
     
+    const [questionConfig, setQuestionConfig] = useState<any>(null);
+    const [configLoading, setConfigLoading] = useState(true);
+    const [isSavingConfig, setIsSavingConfig] = useState(false);
+    
     const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
         if (!isAuthenticated) return;
 
-        const fetchData = async () => {
+        const initializeAndFetchData = async () => {
             setLoading(true);
+            setConfigLoading(true);
             try {
+                // Initialize/Fetch Config
+                const configRef = doc(db, "config", "questions");
+                const configSnap = await getDoc(configRef);
+                if (!configSnap.exists()) {
+                    await setDoc(configRef, DEFAULT_QUESTIONS);
+                    setQuestionConfig(DEFAULT_QUESTIONS);
+                } else {
+                    setQuestionConfig(configSnap.data());
+                }
+
+                // Fetch Survey Data
                 const q = query(collection(db, "surveys"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 const surveyData: SurveyData[] = [];
@@ -96,18 +113,19 @@ export default function AdminPage() {
                 });
                 setSurveys(surveyData);
             } catch (err) {
-                console.error("Error fetching survey data: ", err);
+                console.error("Error fetching data: ", err);
                 toast({
                     variant: "destructive",
                     title: "Gagal memuat data",
-                    description: "Terjadi kesalahan saat mengambil data survei.",
+                    description: "Terjadi kesalahan saat mengambil data.",
                 });
             } finally {
                 setLoading(false);
+                setConfigLoading(false);
             }
         };
 
-        fetchData();
+        initializeAndFetchData();
     }, [isAuthenticated, toast]);
 
     const handleLogin = (e: React.FormEvent) => {
@@ -144,17 +162,46 @@ export default function AdminPage() {
         }
     };
 
+    const handleConfigChange = (section: string, key: string, value: string) => {
+        setQuestionConfig((prev: any) => ({
+            ...prev,
+            [section]: {
+                ...prev[section],
+                [key]: value
+            }
+        }));
+    };
+    
+    const handleSaveConfig = async () => {
+        setIsSavingConfig(true);
+        try {
+            const configRef = doc(db, "config", "questions");
+            await setDoc(configRef, questionConfig);
+            toast({
+                title: "Konfigurasi disimpan",
+                description: "Perubahan pertanyaan survei telah berhasil disimpan.",
+            });
+        } catch(err) {
+            console.error("Error saving config:", err);
+            toast({ variant: "destructive", title: "Gagal menyimpan", description: "Terjadi kesalahan saat menyimpan konfigurasi." });
+        } finally {
+            setIsSavingConfig(false);
+        }
+    };
+
     const calculateScores = (survey: SurveyData) => {
+        if (!questionConfig) return { ikm: 0, ipak: 0 };
         const kualitasSum = Object.values(survey.kualitas).reduce((a, b) => a + b, 0);
-        const ikm = (kualitasSum / (Object.keys(KUALITAS_QUESTIONS_LABELS).length * 6)) * 100;
+        const ikm = (kualitasSum / (Object.keys(questionConfig.kualitas).length * 6)) * 100;
 
         const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
-        const ipak = (penyimpanganSum / (Object.keys(PENYIMPANGAN_QUESTIONS_LABELS).length * 6)) * 100;
+        const ipak = (penyimpanganSum / (Object.keys(questionConfig.penyimpangan).length * 6)) * 100;
         
         return { ikm, ipak };
     };
 
     const displayedSurveys = useMemo(() => {
+        if (!questionConfig) return [];
         let filtered = surveys.filter(survey =>
             (survey.nama || "Anonim").toLowerCase().includes(searchTerm.toLowerCase()) ||
             survey.nomorHp.includes(searchTerm)
@@ -179,10 +226,10 @@ export default function AdminPage() {
         });
 
         return filtered;
-    }, [surveys, searchTerm, sortConfig]);
+    }, [surveys, searchTerm, sortConfig, questionConfig]);
     
     const handleDownload = () => {
-        if (displayedSurveys.length === 0) {
+        if (displayedSurveys.length === 0 || !questionConfig) {
             toast({ title: "Tidak ada data untuk diunduh." });
             return;
         }
@@ -198,12 +245,12 @@ export default function AdminPage() {
                 'Usia': s.usia,
                 'Jenis Kelamin': s.jenisKelamin,
                 'Pendidikan': s.pendidikan,
-                ...Object.fromEntries(Object.entries(s.kualitas).map(([k,v]) => [`Kualitas - ${KUALITAS_QUESTIONS_LABELS[k]}`,v])),
+                ...Object.fromEntries(Object.entries(s.kualitas).map(([k,v]) => [`Kualitas - ${questionConfig.kualitas[k]}`,v])),
                 'IKM': ikm.toFixed(2),
-                ...Object.fromEntries(Object.entries(s.penyimpangan).map(([k,v]) => [`Penyimpangan - ${PENYIMPANGAN_QUESTIONS_LABELS[k]}`,v])),
+                ...Object.fromEntries(Object.entries(s.penyimpangan).map(([k,v]) => [`Penyimpangan - ${questionConfig.penyimpangan[k]}`,v])),
                 'IPAK': ipak.toFixed(2),
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
-                'Area Perbaikan': s.perbaikan.map(p => PERBAIKAN_LABELS[p] || p).join('; '),
+                'Area Perbaikan': s.perbaikan.map(p => questionConfig.perbaikan[p] || p).join('; '),
                 'Saran': s.saran || '',
             };
             return flat;
@@ -275,13 +322,13 @@ export default function AdminPage() {
         );
     }
     
-    if (loading) {
+    if (loading || configLoading) {
         return <div className="flex h-screen justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-4">Memuat data admin...</p></div>;
     }
 
     return (
-        <main className="container mx-auto p-4 sm:p-6 md:p-8">
-            <header className="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <main className="container mx-auto p-4 sm:p-6 md:p-8 space-y-8">
+            <header className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary">
                         Dashboard Admin
@@ -405,7 +452,7 @@ export default function AdminPage() {
                                                                             <h4 className="font-bold text-lg mb-2">II. Jawaban Kualitas Pelayanan</h4>
                                                                             <ul className="space-y-1 text-sm">
                                                                                 {Object.entries(survey.kualitas).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{KUALITAS_QUESTIONS_LABELS[key]}:</span> <strong>{value}/6</strong></li>
+                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.kualitas[key]}:</span> <strong>{value}/6</strong></li>
                                                                                 ))}
                                                                             </ul>
                                                                         </div>
@@ -413,7 +460,7 @@ export default function AdminPage() {
                                                                             <h4 className="font-bold text-lg mb-2">III. Jawaban Penyimpangan</h4>
                                                                             <ul className="space-y-1 text-sm">
                                                                                 {Object.entries(survey.penyimpangan).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{PENYIMPANGAN_QUESTIONS_LABELS[key]}:</span> <strong>{value}/6</strong></li>
+                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.penyimpangan[key]}:</span> <strong>{value}/6</strong></li>
                                                                                 ))}
                                                                             </ul>
                                                                         </div>
@@ -421,7 +468,7 @@ export default function AdminPage() {
                                                                     <div>
                                                                         <h4 className="font-bold text-lg mb-2">IV. Evaluasi & Verifikasi</h4>
                                                                         <div className="space-y-2 text-sm">
-                                                                            <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => PERBAIKAN_LABELS[p] || p).join(', ')}</p>
+                                                                            <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => questionConfig.perbaikan[p] || p).join(', ')}</p>
                                                                             <div>
                                                                                 <p><strong>Saran:</strong></p>
                                                                                 <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saran || "Tidak ada saran."}</blockquote>
@@ -481,6 +528,51 @@ export default function AdminPage() {
                                 </TableBody>
                             </Table>
                         </div>
+                    )}
+                </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                         <div>
+                            <CardTitle>Manajemen Pertanyaan</CardTitle>
+                            <CardDescription>Ubah redaksi pertanyaan yang tampil di formulir survei.</CardDescription>
+                         </div>
+                         <Button onClick={handleSaveConfig} disabled={isSavingConfig}>
+                             {isSavingConfig ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</> : <><Save className="mr-2 h-4 w-4"/> Simpan Perubahan</>}
+                         </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="grid md:grid-cols-2 gap-8">
+                    {configLoading ? <Skeleton className="h-64 w-full md:col-span-2"/> : (
+                        <>
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg text-primary">II. Kualitas Pelayanan</h3>
+                            {Object.keys(questionConfig.kualitas).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`kualitas-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Textarea id={`kualitas-${key}`} value={questionConfig.kualitas[key]} onChange={(e) => handleConfigChange('kualitas', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg text-primary">III. Penyimpangan Pelayanan</h3>
+                            {Object.keys(questionConfig.penyimpangan).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`penyimpangan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Textarea id={`penyimpangan-${key}`} value={questionConfig.penyimpangan[key]} onChange={(e) => handleConfigChange('penyimpangan', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                            <h3 className="font-semibold text-lg text-primary mt-8">IV. Opsi Perbaikan</h3>
+                            {Object.keys(questionConfig.perbaikan).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`perbaikan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Input id={`perbaikan-${key}`} value={questionConfig.perbaikan[key]} onChange={(e) => handleConfigChange('perbaikan', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
+                        </>
                     )}
                 </CardContent>
             </Card>
