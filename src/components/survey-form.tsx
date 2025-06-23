@@ -5,9 +5,10 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { Check, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { db, auth } from "@/lib/firebase"
+import { signInAnonymously } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -97,6 +98,7 @@ export function SurveyForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -112,6 +114,24 @@ export function SurveyForm() {
       tandaTangan: "",
     },
   });
+
+  useEffect(() => {
+    const authenticate = async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Error signing in anonymously: ", error);
+        toast({
+          variant: "destructive",
+          title: "Gagal Autentikasi",
+          description: "Tidak dapat terhubung ke server. Mohon muat ulang halaman.",
+        });
+      } finally {
+        setIsSigningIn(false);
+      }
+    };
+    authenticate();
+  }, [toast]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -311,7 +331,7 @@ export function SurveyForm() {
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="w-full" disabled={isSubmitting || isSigningIn}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
