@@ -6,6 +6,8 @@ import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { Check, Loader2 } from "lucide-react"
 import { useState } from "react"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -113,20 +115,30 @@ export function SurveyForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    // Here you would typically send the data to your backend (e.g., Firebase)
-    console.log(values);
+    try {
+      await addDoc(collection(db, "surveys"), {
+        ...values,
+        createdAt: serverTimestamp(),
+      });
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+      toast({
+        title: "Survey Terkirim!",
+        description: "Terima kasih atas partisipasi Anda.",
+        action: <div className="p-2 bg-green-500 text-white rounded-full"><Check /></div>
+      });
+      
+      router.push("/hasil");
 
-    toast({
-      title: "Survey Terkirim!",
-      description: "Terima kasih atas partisipasi Anda.",
-      action: <div className="p-2 bg-green-500 text-white rounded-full"><Check /></div>
-    });
-    
-    router.push("/hasil");
-    setIsSubmitting(false);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengirim Survey",
+        description: "Terjadi kesalahan. Mohon coba lagi.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
