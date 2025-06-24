@@ -307,54 +307,41 @@ export function SurveyForm() {
               </FormItem>
             )} />
 
-            <FormField control={form.control} name="perbaikan" render={() => (
+            <FormField
+              control={form.control}
+              name="perbaikan"
+              render={({ field }) => (
                 <FormItem>
                   <div className="mb-4">
                     <FormLabel className="text-base">Menurut Anda, apa yang perlu diperbaiki dari layanan kami?</FormLabel>
                     <FormDescription>Boleh pilih lebih dari satu.</FormDescription>
                   </div>
                   {perbaikanItems.map((item: any) => (
-                    <FormField key={item.id} control={form.control} name="perbaikan"
-                      render={({ field }) => {
-                        return (
-                          <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(item.id)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...field.value, item.id])
-                                    : field.onChange(field.value?.filter((value) => value !== item.id))
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">{item.label}</FormLabel>
-                          </FormItem>
-                        )
-                      }}
-                    />
+                    <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0 mb-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value?.includes(item.id)}
+                          onCheckedChange={(checked) => {
+                            if (item.id === 'tidak_ada') {
+                              return checked ? field.onChange(['tidak_ada']) : field.onChange([]);
+                            }
+
+                            if (checked) {
+                              const newValues = field.value?.filter(v => v !== 'tidak_ada') || [];
+                              field.onChange([...newValues, item.id]);
+                            } else {
+                              field.onChange(
+                                field.value?.filter((value) => value !== item.id)
+                              );
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal">
+                        {item.label}
+                      </FormLabel>
+                    </FormItem>
                   ))}
-                   <FormField
-                      control={form.control}
-                      name="perbaikan"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-2">
-                           <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes("tidak_ada")}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange(["tidak_ada"]);
-                                } else {
-                                  field.onChange([]);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal text-accent-foreground">Tidak ada yang perlu diperbaiki</FormLabel>
-                        </FormItem>
-                      )}
-                    />
                   <FormMessage />
                 </FormItem>
               )}
