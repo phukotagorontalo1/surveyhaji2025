@@ -79,9 +79,8 @@ export function SurveyForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSigningIn, setIsSigningIn] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const [config, setConfig] = useState<any>(null);
-  const [loadingConfig, setLoadingConfig] = useState(true);
 
   const questionIcons: { [key: string]: React.ElementType } = {
       q1: FileText,
@@ -116,12 +115,10 @@ export function SurveyForm() {
 
   useEffect(() => {
     const initializeForm = async () => {
-      setIsSigningIn(true);
-      setLoadingConfig(true);
-
       try {
-        await signInAnonymously(auth);
-        setIsSigningIn(false);
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
 
         const configDoc = await getDoc(doc(db, "config", "questions"));
         if (configDoc.exists()) {
@@ -147,8 +144,7 @@ export function SurveyForm() {
             });
         }
       } finally {
-        setLoadingConfig(false);
-        if(isSigningIn) setIsSigningIn(false);
+        setIsReady(true);
       }
     };
 
@@ -212,7 +208,7 @@ export function SurveyForm() {
     }
   }
 
-  if (loadingConfig) {
+  if (!isReady) {
       return (
           <div className="space-y-8">
               <Card><CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader><CardContent className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></CardContent></Card>
@@ -273,7 +269,7 @@ export function SurveyForm() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">II. Kualitas Pelayanan</CardTitle>
-            <CardDescription>Berikan penilaian Anda terhadap kualitas pelayanan haji yang telah diterima. Penilaian didasarkan pada pengalaman Anda.</CardDescription>
+            <CardDescription>Berikan penilaian Anda terhadap kualitas pelayanan haji di Tingkat Kemenag Kota Gorontalo yang telah diterima. Penilaian didasarkan pada pengalaman Anda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {kualitasQuestions.map((q: any, index: number) => {
@@ -396,7 +392,7 @@ export function SurveyForm() {
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting || isSigningIn}>
+        <Button type="submit" className="w-full" disabled={isSubmitting || !isReady}>
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
