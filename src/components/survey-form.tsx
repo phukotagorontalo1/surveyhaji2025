@@ -269,7 +269,9 @@ export function SurveyForm() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">II. Kualitas Pelayanan</CardTitle>
-            <CardDescription>Berikan penilaian Anda terhadap kualitas pelayanan haji di Tingkat Kemenag Kota Gorontalo yang telah diterima. Penilaian didasarkan pada pengalaman Anda.</CardDescription>
+            <CardDescription>
+              Berikan penilaian Anda terhadap kualitas pelayanan haji di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong> yang telah diterima. Penilaian didasarkan pada pengalaman Anda.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {kualitasQuestions.map((q: any, index: number) => {
@@ -293,7 +295,9 @@ export function SurveyForm() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">III. Perilaku Penyimpangan Pelayanan</CardTitle>
-            <CardDescription>Berikan penilaian Anda mengenai ada atau tidaknya perilaku penyimpangan dalam pelayanan haji yang Anda alami.</CardDescription>
+            <CardDescription>
+              Berikan penilaian Anda mengenai ada atau tidaknya perilaku penyimpangan dalam pelayanan haji di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong> yang Anda alami.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {penyimpanganQuestions.map((q: any, index: number) => {
@@ -317,7 +321,9 @@ export function SurveyForm() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">IV. Evaluasi Perbaikan</CardTitle>
-            <CardDescription>Masukan Anda sangat berarti untuk perbaikan layanan kami di masa mendatang.</CardDescription>
+            <CardDescription>
+              Masukan Anda sangat berarti untuk perbaikan layanan kami di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong> di masa mendatang.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <FormField control={form.control} name="tidakDiarahkan" render={({ field }) => (
