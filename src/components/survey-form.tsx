@@ -95,8 +95,12 @@ export function SurveyForm() {
   });
 
   useEffect(() => {
-    const authenticate = async () => {
+    const initializeForm = async () => {
+      setIsSigningIn(true);
+      setLoadingConfig(true);
+
       try {
+        // First, sign in anonymously to get permissions
         await signInAnonymously(auth);
       } catch (error: any) {
         console.error("Error signing in anonymously: ", error);
@@ -113,25 +117,25 @@ export function SurveyForm() {
               description: "Tidak dapat terhubung ke server. Mohon muat ulang halaman.",
             });
         }
-      } finally {
         setIsSigningIn(false);
+        setLoadingConfig(false);
+        return; // Stop if authentication fails
       }
-    };
 
-    const fetchConfig = async () => {
-      setLoadingConfig(true);
+      setIsSigningIn(false);
+
+      // After successful sign-in, fetch the survey configuration
       try {
         const configDoc = await getDoc(doc(db, "config", "questions"));
         if (configDoc.exists()) {
           setConfig(configDoc.data());
         } else {
-          // This should ideally not happen if admin page initializes it
           toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
         }
       } catch (error: any) {
         console.error("Error fetching config:", error);
         if (error.code === 'permission-denied') {
-            toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Periksa aturan keamanan Firestore." });
+            toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Kemungkinan Anda perlu menyesuaikan Aturan Keamanan Firestore." });
         } else {
             toast({ variant: "destructive", title: "Gagal memuat konfigurasi survei." });
         }
@@ -139,9 +143,8 @@ export function SurveyForm() {
         setLoadingConfig(false);
       }
     };
-    
-    authenticate();
-    fetchConfig();
+
+    initializeForm();
   }, [toast]);
   
   const kualitasQuestions = useMemo(() => {
