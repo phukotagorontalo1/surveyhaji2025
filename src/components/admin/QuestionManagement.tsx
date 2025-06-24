@@ -62,9 +62,13 @@ export default function QuestionManagement() {
                 } else {
                     setQuestionConfig(configSnap.data());
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Error fetching config: ", err);
-                toast({ variant: "destructive", title: "Gagal memuat konfigurasi." });
+                if (err.code === 'permission-denied') {
+                    toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Periksa aturan keamanan Firestore." });
+                } else {
+                    toast({ variant: "destructive", title: "Gagal memuat konfigurasi." });
+                }
             } finally {
                 setLoading(false);
             }
@@ -91,9 +95,13 @@ export default function QuestionManagement() {
                 title: "Konfigurasi disimpan",
                 description: "Perubahan pertanyaan survei telah berhasil disimpan.",
             });
-        } catch(err) {
+        } catch(err: any) {
             console.error("Error saving config:", err);
-            toast({ variant: "destructive", title: "Gagal menyimpan", description: "Terjadi kesalahan saat menyimpan konfigurasi." });
+            if (err.code === 'permission-denied') {
+                toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat menyimpan konfigurasi. Periksa aturan keamanan Firestore." });
+            } else {
+                toast({ variant: "destructive", title: "Gagal menyimpan", description: "Terjadi kesalahan saat menyimpan konfigurasi." });
+            }
         } finally {
             setIsSaving(false);
         }

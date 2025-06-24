@@ -1,3 +1,4 @@
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -127,9 +128,13 @@ export function SurveyForm() {
           // This should ideally not happen if admin page initializes it
           toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching config:", error);
-        toast({ variant: "destructive", title: "Gagal memuat konfigurasi survei." });
+        if (error.code === 'permission-denied') {
+            toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Periksa aturan keamanan Firestore." });
+        } else {
+            toast({ variant: "destructive", title: "Gagal memuat konfigurasi survei." });
+        }
       } finally {
         setLoadingConfig(false);
       }
@@ -172,13 +177,21 @@ export function SurveyForm() {
       
       router.push("/hasil");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding document: ", error);
-      toast({
-        variant: "destructive",
-        title: "Gagal Mengirim Survey",
-        description: "Terjadi kesalahan. Mohon coba lagi.",
-      });
+      if (error.code === 'permission-denied') {
+        toast({
+            variant: "destructive",
+            title: "Izin Ditolak Firestore",
+            description: "Gagal mengirim survei. Periksa aturan keamanan Firestore Anda.",
+        });
+      } else {
+        toast({
+            variant: "destructive",
+            title: "Gagal Mengirim Survey",
+            description: "Terjadi kesalahan. Mohon coba lagi.",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

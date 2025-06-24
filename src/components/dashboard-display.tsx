@@ -63,13 +63,21 @@ export function DashboardDisplay() {
                     });
                 }
 
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error fetching data: ", error);
-                toast({
-                    variant: "destructive",
-                    title: "Gagal memuat data",
-                    description: "Terjadi kesalahan saat mengambil data dasbor.",
-                });
+                 if (error.code === 'permission-denied') {
+                    toast({
+                        variant: "destructive",
+                        title: "Izin Ditolak Firestore",
+                        description: "Gagal memuat data dasbor. Periksa aturan keamanan Firestore Anda.",
+                    });
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Gagal memuat data",
+                        description: "Terjadi kesalahan saat mengambil data dasbor.",
+                    });
+                }
             } finally {
                 setLoading(false);
             }

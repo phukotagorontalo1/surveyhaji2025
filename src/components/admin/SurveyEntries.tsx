@@ -66,13 +66,21 @@ export default function SurveyEntries() {
                     surveyData.push({ id: doc.id, ...doc.data() } as SurveyData);
                 });
                 setSurveys(surveyData);
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Error fetching data: ", err);
-                toast({
-                    variant: "destructive",
-                    title: "Gagal memuat data",
-                    description: "Terjadi kesalahan saat mengambil data survei.",
-                });
+                if (err.code === 'permission-denied') {
+                    toast({
+                        variant: "destructive",
+                        title: "Izin Ditolak Firestore",
+                        description: "Aturan keamanan Anda tidak mengizinkan untuk membaca data survei.",
+                    });
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Gagal memuat data",
+                        description: "Terjadi kesalahan saat mengambil data survei.",
+                    });
+                }
             } finally {
                 setLoading(false);
             }
@@ -89,13 +97,21 @@ export default function SurveyEntries() {
                 title: "Data berhasil dihapus",
                 description: `Data survei dengan ID ${surveyId} telah dihapus.`,
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error deleting document: ", err);
-            toast({
-                variant: "destructive",
-                title: "Gagal menghapus data",
-                description: "Terjadi kesalahan. Mohon coba lagi.",
-            });
+             if (err.code === 'permission-denied') {
+                toast({
+                    variant: "destructive",
+                    title: "Izin Ditolak Firestore",
+                    description: "Aturan keamanan Anda tidak mengizinkan untuk menghapus data.",
+                });
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Gagal menghapus data",
+                    description: "Terjadi kesalahan. Mohon coba lagi.",
+                });
+            }
         }
     };
 
