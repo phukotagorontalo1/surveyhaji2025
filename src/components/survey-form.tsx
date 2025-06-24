@@ -5,7 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
-import { Check, Loader2 } from "lucide-react"
+import { 
+  Check, Loader2, FileText, Route, Clock, CircleDollarSign, 
+  Award, UserCheck, Smile, Building, HandCoins, FileX2, UserX, 
+  PackageX, ShieldQuestion 
+} from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
 import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
 import { db, auth } from "@/lib/firebase"
@@ -79,6 +83,22 @@ export function SurveyForm() {
   const [config, setConfig] = useState<any>(null);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
+  const questionIcons: { [key: string]: React.ElementType } = {
+      q1: FileText,
+      q2: Route,
+      q3: Clock,
+      q4: CircleDollarSign,
+      q5: Award,
+      q6: UserCheck,
+      q7: Smile,
+      q8: Building,
+      p1: HandCoins,
+      p2: FileX2,
+      p3: UserX,
+      p4: PackageX,
+      p5: ShieldQuestion,
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -100,32 +120,9 @@ export function SurveyForm() {
       setLoadingConfig(true);
 
       try {
-        // First, sign in anonymously to get permissions
         await signInAnonymously(auth);
-      } catch (error: any) {
-        console.error("Error signing in anonymously: ", error);
-        if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/admin-restricted-operation') {
-            toast({
-                variant: "destructive",
-                title: "Login Anonim Belum Diaktifkan",
-                description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
-            });
-        } else {
-            toast({
-              variant: "destructive",
-              title: "Gagal Autentikasi",
-              description: "Tidak dapat terhubung ke server. Mohon muat ulang halaman.",
-            });
-        }
         setIsSigningIn(false);
-        setLoadingConfig(false);
-        return; // Stop if authentication fails
-      }
 
-      setIsSigningIn(false);
-
-      // After successful sign-in, fetch the survey configuration
-      try {
         const configDoc = await getDoc(doc(db, "config", "questions"));
         if (configDoc.exists()) {
           setConfig(configDoc.data());
@@ -133,14 +130,25 @@ export function SurveyForm() {
           toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
         }
       } catch (error: any) {
-        console.error("Error fetching config:", error);
-        if (error.code === 'permission-denied') {
-            toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Kemungkinan Anda perlu menyesuaikan Aturan Keamanan Firestore." });
+        console.error("Error during initialization: ", error);
+        if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/admin-restricted-operation') {
+            toast({
+                variant: "destructive",
+                title: "Login Anonim Belum Diaktifkan",
+                description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
+            });
+        } else if (error.code === 'permission-denied') {
+            toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Pastikan Aturan Keamanan Firestore sudah benar." });
         } else {
-            toast({ variant: "destructive", title: "Gagal memuat konfigurasi survei." });
+            toast({
+              variant: "destructive",
+              title: "Gagal Terhubung",
+              description: "Terjadi kesalahan koneksi. Mohon muat ulang halaman.",
+            });
         }
       } finally {
         setLoadingConfig(false);
+        if(isSigningIn) setIsSigningIn(false);
       }
     };
 
@@ -159,13 +167,12 @@ export function SurveyForm() {
   }, [config]);
 
   const perbaikanItems = useMemo(() => {
-      if (!config) return [];
-      const allItems = Object.entries(config.perbaikan).map(([id, label]) => ({ id, label: label as string }));
-      const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
-      const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
-      
-      const sortedItems = tidakAdaItem ? [...otherItems, tidakAdaItem] : otherItems;
-      return sortedItems;
+    if (!config) return [];
+    const allItems = Object.entries(config.perbaikan).map(([id, label]) => ({ id, label: label as string }));
+    const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
+    const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
+    
+    return tidakAdaItem ? [...otherItems, tidakAdaItem] : otherItems;
   }, [config]);
 
 
@@ -269,15 +276,21 @@ export function SurveyForm() {
             <CardDescription>Berikan penilaian Anda terhadap kualitas pelayanan haji yang telah diterima. Penilaian didasarkan pada pengalaman Anda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {kualitasQuestions.map((q: any, index: number) => (
-              <FormField key={q.id} control={form.control} name={`kualitas.${q.id as 'q1'}`} render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{index + 1}. {q.label}</FormLabel>
-                  <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            ))}
+            {kualitasQuestions.map((q: any, index: number) => {
+              const Icon = questionIcons[q.id];
+              return (
+                <FormField key={q.id} control={form.control} name={`kualitas.${q.id as 'q1'}`} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-start gap-3">
+                      {Icon && <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />}
+                      <span>{index + 1}. {q.label}</span>
+                    </FormLabel>
+                    <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )
+            })}
           </CardContent>
         </Card>
 
@@ -287,15 +300,21 @@ export function SurveyForm() {
             <CardDescription>Berikan penilaian Anda mengenai ada atau tidaknya perilaku penyimpangan dalam pelayanan haji yang Anda alami.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {penyimpanganQuestions.map((q: any, index: number) => (
-              <FormField key={q.id} control={form.control} name={`penyimpangan.${q.id as 'p1'}`} render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{index + 1}. {q.label}</FormLabel>
-                  <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            ))}
+            {penyimpanganQuestions.map((q: any, index: number) => {
+              const Icon = questionIcons[q.id];
+              return (
+                <FormField key={q.id} control={form.control} name={`penyimpangan.${q.id as 'p1'}`} render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-start gap-3">
+                      {Icon && <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />}
+                      <span>{index + 1}. {q.label}</span>
+                    </FormLabel>
+                    <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )
+            })}
           </CardContent>
         </Card>
 
@@ -330,16 +349,17 @@ export function SurveyForm() {
                         <Checkbox
                           checked={field.value?.includes(item.id)}
                           onCheckedChange={(checked) => {
+                            const currentValue = field.value || [];
                             if (item.id === 'tidak_ada') {
                               return checked ? field.onChange(['tidak_ada']) : field.onChange([]);
                             }
 
                             if (checked) {
-                              const newValues = field.value?.filter(v => v !== 'tidak_ada') || [];
+                              const newValues = currentValue.filter(v => v !== 'tidak_ada');
                               field.onChange([...newValues, item.id]);
                             } else {
                               field.onChange(
-                                field.value?.filter((value) => value !== item.id)
+                                currentValue.filter((value) => value !== item.id)
                               );
                             }
                           }}
