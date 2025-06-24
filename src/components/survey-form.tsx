@@ -157,7 +157,12 @@ export function SurveyForm() {
 
   const perbaikanItems = useMemo(() => {
       if (!config) return [];
-      return Object.entries(config.perbaikan).map(([id, label]) => ({ id, label }));
+      const allItems = Object.entries(config.perbaikan).map(([id, label]) => ({ id, label: label as string }));
+      const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
+      const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
+      
+      const sortedItems = tidakAdaItem ? [...otherItems, tidakAdaItem] : otherItems;
+      return sortedItems;
   }, [config]);
 
 
