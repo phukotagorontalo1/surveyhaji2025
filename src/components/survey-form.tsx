@@ -54,7 +54,7 @@ const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 
 
 const formSchema = z.object({
   nama: z.string().optional(),
-  nomorHp: z.string().min(10, { message: "Nomor HP tidak valid." }),
+  nomorHp: z.string().optional(),
   pekerjaan: z.string({ required_error: "Pekerjaan harus dipilih." }),
   usia: z.string({ required_error: "Usia harus dipilih." }),
   jenisKelamin: z.enum(["Laki-laki", "Perempuan"], { required_error: "Jenis kelamin harus dipilih." }),
@@ -116,10 +116,8 @@ export function SurveyForm() {
   useEffect(() => {
     const initializeForm = async () => {
       try {
-        if (!auth.currentUser) {
-          await signInAnonymously(auth);
-        }
-
+        await signInAnonymously(auth);
+        
         const configDoc = await getDoc(doc(db, "config", "questions"));
         if (configDoc.exists()) {
           setConfig(configDoc.data());
@@ -235,7 +233,7 @@ export function SurveyForm() {
               <FormItem><FormLabel>Nama Lengkap (Opsional)</FormLabel><FormControl><Input placeholder="Masukkan nama lengkap Anda" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="nomorHp" render={({ field }) => (
-              <FormItem><FormLabel>Nomor HP</FormLabel><FormControl><Input type="tel" placeholder="Contoh: 081234567890" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Nomor HP (Opsional)</FormLabel><FormControl><Input type="tel" placeholder="Contoh: 081234567890" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="pekerjaan" render={({ field }) => (
               <FormItem><FormLabel>Pekerjaan</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>

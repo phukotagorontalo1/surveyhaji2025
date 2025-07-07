@@ -24,7 +24,7 @@ interface SurveyData {
     penyimpangan: { [key: string]: number };
     createdAt: Timestamp;
     nama?: string;
-    nomorHp: string;
+    nomorHp?: string;
     pekerjaan: string;
     usia: string;
     jenisKelamin: string;
@@ -130,7 +130,7 @@ export default function SurveyEntries() {
         if (!questionConfig) return [];
         let filtered = surveys.filter(survey =>
             (survey.nama || "Anonim").toLowerCase().includes(searchTerm.toLowerCase()) ||
-            survey.nomorHp.includes(searchTerm)
+            (survey.nomorHp || "").includes(searchTerm)
         );
 
         filtered.sort((a, b) => {
@@ -173,7 +173,7 @@ export default function SurveyEntries() {
                 id: s.id,
                 'Tanggal Input': s.createdAt.toDate().toISOString(),
                 'Nama': s.nama || 'Anonim',
-                'No. HP': s.nomorHp,
+                'No. HP': s.nomorHp || '',
                 'Pekerjaan': s.pekerjaan,
                 'Usia': s.usia,
                 'Jenis Kelamin': s.jenisKelamin,
@@ -328,7 +328,7 @@ export default function SurveyEntries() {
                                                                         <h4 className="font-bold text-lg mb-2">I. Detail Responden</h4>
                                                                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                                                                             <p><strong>Nama:</strong> {survey.nama || "Tidak diisi"}</p>
-                                                                            <p><strong>No. HP:</strong> {survey.nomorHp}</p>
+                                                                            <p><strong>No. HP:</strong> {survey.nomorHp || "Tidak diisi"}</p>
                                                                             <p><strong>Pekerjaan:</strong> {survey.pekerjaan}</p>
                                                                             <p><strong>Usia:</strong> {survey.usia}</p>
                                                                             <p><strong>Jenis Kelamin:</strong> {survey.jenisKelamin}</p>
