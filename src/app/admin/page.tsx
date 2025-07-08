@@ -67,7 +67,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarMenu>
-          <p className="px-4 text-xs text-muted-foreground">Password: <strong>admin</strong></p>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -148,9 +147,6 @@ export default function AdminPage() {
                         </form>
                     </CardContent>
                     <CardFooter>
-                        <p className="w-full text-center text-xs text-muted-foreground">
-                            Petunjuk: Passwordnya adalah "<strong>admin</strong>".
-                        </p>
                     </CardFooter>
                 </Card>
             </div>
