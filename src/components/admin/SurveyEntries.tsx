@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Trash2, Eye, Search, FileDown, CheckCircle2, XCircle } from "lucide-react"
@@ -152,15 +152,17 @@ export default function SurveyEntries() {
 
         filtered.sort((a, b) => {
             let valA, valB;
-            if (['iih', 'ikp', 'ibv', 'ipk', 'imh'].includes(sortConfig.key)) {
-                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ikp' | 'ibv' | 'ipk' | 'imh'];
-                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ikp' | 'ibv' | 'ipk' | 'imh'];
-            } else if (sortConfig.key === 'nama') {
-                valA = a.nama?.toLowerCase() || 'zzz';
-                valB = b.nama?.toLowerCase() || 'zzz';
-            } else { // createdAt
+            const key = sortConfig.key;
+
+            if (['iih', 'ikp', 'ibv', 'ipk', 'imh'].includes(key)) {
+                valA = calculateScores(a)[key as keyof ReturnType<typeof calculateScores>];
+                valB = calculateScores(b)[key as keyof ReturnType<typeof calculateScores>];
+            } else if (key === 'createdAt') {
                 valA = a.createdAt.toMillis();
                 valB = b.createdAt.toMillis();
+            } else { // Handles nama, pekerjaan, usia, jenisKelamin, pendidikan
+                valA = (a[key as keyof SurveyData] as string)?.toLowerCase() || '';
+                valB = (b[key as keyof SurveyData] as string)?.toLowerCase() || '';
             }
 
             if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -246,7 +248,7 @@ export default function SurveyEntries() {
     }
 
     const DetailAnswerSection = ({ title, surveySection, configSection, saran }: { title: string, surveySection: { [key: string]: number } | undefined, configSection: any, saran?: string }) => {
-        if (!surveySection) return null;
+        if (!surveySection || !configSection) return null;
         return (
             <div className="space-y-2">
                 <h4 className="font-bold text-lg text-primary border-b pb-2">{title}</h4>
@@ -312,20 +314,37 @@ export default function SurveyEntries() {
                                     <SelectValue placeholder="Urutkan berdasarkan" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="createdAt-desc">Terbaru</SelectItem>
-                                    <SelectItem value="createdAt-asc">Terlama</SelectItem>
-                                    <SelectItem value="iih-desc">IIH Tertinggi</SelectItem>
-                                    <SelectItem value="iih-asc">IIH Terendah</SelectItem>
-                                    <SelectItem value="ikp-desc">IKP Tertinggi</SelectItem>
-                                    <SelectItem value="ikp-asc">IKP Terendah</SelectItem>
-                                    <SelectItem value="ibv-desc">IBV Tertinggi</SelectItem>
-                                    <SelectItem value="ibv-asc">IBV Terendah</SelectItem>
-                                    <SelectItem value="ipk-desc">IPK Tertinggi</SelectItem>
-                                    <SelectItem value="ipk-asc">IPK Terendah</SelectItem>
-                                    <SelectItem value="imh-desc">IMH Tertinggi</SelectItem>
-                                    <SelectItem value="imh-asc">IMH Terendah</SelectItem>
-                                    <SelectItem value="nama-asc">Nama (A-Z)</SelectItem>
-                                    <SelectItem value="nama-desc">Nama (Z-A)</SelectItem>
+                                    <SelectGroup>
+                                        <SelectLabel>Waktu</SelectLabel>
+                                        <SelectItem value="createdAt-desc">Terbaru</SelectItem>
+                                        <SelectItem value="createdAt-asc">Terlama</SelectItem>
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>Responden</SelectLabel>
+                                        <SelectItem value="nama-asc">Nama (A-Z)</SelectItem>
+                                        <SelectItem value="nama-desc">Nama (Z-A)</SelectItem>
+                                        <SelectItem value="pekerjaan-asc">Pekerjaan (A-Z)</SelectItem>
+                                        <SelectItem value="pekerjaan-desc">Pekerjaan (Z-A)</SelectItem>
+                                        <SelectItem value="usia-asc">Usia (A-Z)</SelectItem>
+                                        <SelectItem value="usia-desc">Usia (Z-A)</SelectItem>
+                                        <SelectItem value="jenisKelamin-asc">Gender (A-Z)</SelectItem>
+                                        <SelectItem value="jenisKelamin-desc">Gender (Z-A)</SelectItem>
+                                        <SelectItem value="pendidikan-asc">Pendidikan (A-Z)</SelectItem>
+                                        <SelectItem value="pendidikan-desc">Pendidikan (Z-A)</SelectItem>
+                                    </SelectGroup>
+                                    <SelectGroup>
+                                        <SelectLabel>Skor Indeks</SelectLabel>
+                                        <SelectItem value="iih-desc">IIH Tertinggi</SelectItem>
+                                        <SelectItem value="iih-asc">IIH Terendah</SelectItem>
+                                        <SelectItem value="ikp-desc">IKP Tertinggi</SelectItem>
+                                        <SelectItem value="ikp-asc">IKP Terendah</SelectItem>
+                                        <SelectItem value="ibv-desc">IBV Tertinggi</SelectItem>
+                                        <SelectItem value="ibv-asc">IBV Terendah</SelectItem>
+                                        <SelectItem value="ipk-desc">IPK Tertinggi</SelectItem>
+                                        <SelectItem value="ipk-asc">IPK Terendah</SelectItem>
+                                        <SelectItem value="imh-desc">IMH Tertinggi</SelectItem>
+                                        <SelectItem value="imh-asc">IMH Terendah</SelectItem>
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                             <Button onClick={handleDownload} className="w-full sm:w-auto">
@@ -347,6 +366,10 @@ export default function SurveyEntries() {
                                     <TableRow>
                                         <TableHead>Responden</TableHead>
                                         <TableHead>Tanggal</TableHead>
+                                        <TableHead>Pekerjaan</TableHead>
+                                        <TableHead>Usia</TableHead>
+                                        <TableHead>Gender</TableHead>
+                                        <TableHead>Pendidikan</TableHead>
                                         <TableHead>IIH</TableHead>
                                         <TableHead>IKP</TableHead>
                                         <TableHead>IBV</TableHead>
@@ -365,6 +388,10 @@ export default function SurveyEntries() {
                                                 <div className="text-sm text-muted-foreground">{survey.nomorHp || "Tidak diisi"}</div>
                                             </TableCell>
                                             <TableCell>{survey.createdAt.toDate().toLocaleString('id-ID')}</TableCell>
+                                            <TableCell>{survey.pekerjaan}</TableCell>
+                                            <TableCell>{survey.usia}</TableCell>
+                                            <TableCell>{survey.jenisKelamin}</TableCell>
+                                            <TableCell>{survey.pendidikan}</TableCell>
                                             <TableCell>{iih.toFixed(2)}</TableCell>
                                             <TableCell>{ikp.toFixed(2)}</TableCell>
                                             <TableCell>{ibv.toFixed(2)}</TableCell>
@@ -474,3 +501,5 @@ export default function SurveyEntries() {
         </div>
     );
 }
+
+    
