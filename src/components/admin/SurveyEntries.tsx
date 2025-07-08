@@ -24,6 +24,7 @@ interface SurveyData {
     rekomendasiPaspor: { [key: string]: number };
     biovisa?: { [key: string]: number };
     penjemputanKoper?: { [key: string]: number };
+    mobilisasi?: { [key: string]: number };
     createdAt: Timestamp;
     nama?: string;
     nomorHp?: string;
@@ -37,6 +38,7 @@ interface SurveyData {
     saranRekomendasiPaspor?: string;
     saranBiovisa?: string;
     saranPenjemputanKoper?: string;
+    saranMobilisasi?: string;
     tandaTangan: string;
 }
 
@@ -121,7 +123,7 @@ export default function SurveyEntries() {
     };
 
     const calculateScores = (survey: SurveyData) => {
-        if (!questionConfig || !survey.informasiHaji || !survey.rekomendasiPaspor) return { iih: 0, ikp: 0, ibv: 0, ipk: 0 };
+        if (!questionConfig || !survey.informasiHaji || !survey.rekomendasiPaspor) return { iih: 0, ikp: 0, ibv: 0, ipk: 0, imh: 0 };
         const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
         const iih = (informasiSum / (Object.keys(questionConfig.informasiHaji).length * 5)) * 100;
 
@@ -136,7 +138,11 @@ export default function SurveyEntries() {
         const koperQuestionCount = questionConfig.penjemputanKoper ? Object.keys(questionConfig.penjemputanKoper).length : 0;
         const ipk = koperQuestionCount > 0 ? (koperSum / (koperQuestionCount * 5)) * 100 : 0;
 
-        return { iih, ikp, ibv, ipk };
+        const mobilisasiSum = survey.mobilisasi ? Object.values(survey.mobilisasi).reduce((a, b) => a + b, 0) : 0;
+        const mobilisasiQuestionCount = questionConfig.mobilisasi ? Object.keys(questionConfig.mobilisasi).length : 0;
+        const imh = mobilisasiQuestionCount > 0 ? (mobilisasiSum / (mobilisasiQuestionCount * 5)) * 100 : 0;
+
+        return { iih, ikp, ibv, ipk, imh };
     };
 
     const sortedAndFilteredSurveys = useMemo(() => {
@@ -148,9 +154,9 @@ export default function SurveyEntries() {
 
         filtered.sort((a, b) => {
             let valA, valB;
-            if (sortConfig.key === 'iih' || sortConfig.key === 'ikp' || sortConfig.key === 'ibv' || sortConfig.key === 'ipk') {
-                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ikp' | 'ibv' | 'ipk'];
-                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ikp' | 'ibv' | 'ipk'];
+            if (['iih', 'ikp', 'ibv', 'ipk', 'imh'].includes(sortConfig.key)) {
+                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ikp' | 'ibv' | 'ipk' | 'imh'];
+                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ikp' | 'ibv' | 'ipk' | 'imh'];
             } else if (sortConfig.key === 'nama') {
                 valA = a.nama?.toLowerCase() || 'zzz';
                 valB = b.nama?.toLowerCase() || 'zzz';
@@ -181,7 +187,7 @@ export default function SurveyEntries() {
         }
 
         const flattenedData = sortedAndFilteredSurveys.map(s => {
-            const { iih, ikp, ibv, ipk } = calculateScores(s);
+            const { iih, ikp, ibv, ipk, imh } = calculateScores(s);
             const flat: {[key: string]: any} = {
                 id: s.id,
                 'Tanggal Input': s.createdAt.toDate().toISOString(),
@@ -203,6 +209,9 @@ export default function SurveyEntries() {
                 ...(s.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper - ${questionConfig.penjemputanKoper[k]}`,v])) : {}),
                 'IPK': ipk.toFixed(2),
                 'Saran Penjemputan Koper': s.saranPenjemputanKoper || '',
+                ...(s.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi - ${questionConfig.mobilisasi[k]}`,v])) : {}),
+                'IMH': imh.toFixed(2),
+                'Saran Mobilisasi': s.saranMobilisasi || '',
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
                 'Area Perbaikan': s.perbaikan.map(p => questionConfig.perbaikan[p] || p).join('; '),
             };
@@ -290,6 +299,8 @@ export default function SurveyEntries() {
                                     <SelectItem value="ibv-asc">IBV Terendah</SelectItem>
                                     <SelectItem value="ipk-desc">IPK Tertinggi</SelectItem>
                                     <SelectItem value="ipk-asc">IPK Terendah</SelectItem>
+                                    <SelectItem value="imh-desc">IMH Tertinggi</SelectItem>
+                                    <SelectItem value="imh-asc">IMH Terendah</SelectItem>
                                     <SelectItem value="nama-asc">Nama (A-Z)</SelectItem>
                                     <SelectItem value="nama-desc">Nama (Z-A)</SelectItem>
                                 </SelectContent>
@@ -317,12 +328,13 @@ export default function SurveyEntries() {
                                         <TableHead>IKP</TableHead>
                                         <TableHead>IBV</TableHead>
                                         <TableHead>IPK</TableHead>
+                                        <TableHead>IMH</TableHead>
                                         <TableHead className="text-right">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {paginatedSurveys.map(survey => {
-                                        const { iih, ikp, ibv, ipk } = calculateScores(survey);
+                                        const { iih, ikp, ibv, ipk, imh } = calculateScores(survey);
                                         return (
                                         <TableRow key={survey.id}>
                                             <TableCell>
@@ -334,6 +346,7 @@ export default function SurveyEntries() {
                                             <TableCell>{ikp.toFixed(2)}</TableCell>
                                             <TableCell>{ibv.toFixed(2)}</TableCell>
                                             <TableCell>{ipk.toFixed(2)}</TableCell>
+                                            <TableCell>{imh.toFixed(2)}</TableCell>
                                             <TableCell>
                                                 <div className="flex justify-end gap-2">
                                                     <Dialog>
@@ -416,9 +429,23 @@ export default function SurveyEntries() {
                                                                                 </div>
                                                                             </div>
                                                                         )}
+                                                                         {survey.mobilisasi && questionConfig.mobilisasi && (
+                                                                            <div>
+                                                                                <h4 className="font-bold text-lg mb-2">VI. Jawaban Mobilisasi</h4>
+                                                                                <ul className="space-y-1 text-sm">
+                                                                                    {Object.entries(survey.mobilisasi).map(([key, value]) => (
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.mobilisasi[key]}:</span> <strong>{value}/5</strong></li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                                <div>
+                                                                                    <p><strong>Saran:</strong></p>
+                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranMobilisasi || "Tidak ada saran."}</blockquote>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                     <div>
-                                                                        <h4 className="font-bold text-lg mb-2">VI. Evaluasi & Verifikasi</h4>
+                                                                        <h4 className="font-bold text-lg mb-2">VII. Evaluasi & Verifikasi</h4>
                                                                         <div className="space-y-2 text-sm">
                                                                             <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => questionConfig.perbaikan[p] || p).join(', ')}</p>
                                                                             <div className="flex items-center gap-2">

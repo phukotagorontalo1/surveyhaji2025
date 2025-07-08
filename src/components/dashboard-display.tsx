@@ -18,6 +18,7 @@ interface SurveyData {
     rekomendasiPaspor: { [key: string]: number };
     biovisa?: { [key: string]: number };
     penjemputanKoper?: { [key: string]: number };
+    mobilisasi?: { [key: string]: number };
     createdAt: Timestamp;
     [key: string]: any;
 }
@@ -27,11 +28,12 @@ interface CalculatedScores {
     ikp: number;
     ibv: number;
     ipk: number;
+    imh: number;
 }
 
 export function DashboardDisplay() {
     const [surveys, setSurveys] = useState<SurveyData[]>([]);
-    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ikp: 0, ibv: 0, ipk: 0 });
+    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ikp: 0, ibv: 0, ipk: 0, imh: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [questionConfig, setQuestionConfig] = useState<any>(null);
@@ -95,15 +97,19 @@ export function DashboardDisplay() {
         let totalIkpScore = 0;
         let totalIbvScore = 0;
         let totalIpkScore = 0;
+        let totalImhScore = 0;
+
         const informasiQuestionKeys = Object.keys(config.informasiHaji || {});
         const pasporQuestionKeys = Object.keys(config.rekomendasiPaspor || {});
         const biovisaQuestionKeys = Object.keys(config.biovisa || {});
         const koperQuestionKeys = Object.keys(config.penjemputanKoper || {});
+        const mobilisasiQuestionKeys = Object.keys(config.mobilisasi || {});
 
         const informasiTotals: { [key: string]: number } = informasiQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
 
         const surveysWithBiovisa = data.filter(s => s.biovisa);
         const surveysWithKoper = data.filter(s => s.penjemputanKoper);
+        const surveysWithMobilisasi = data.filter(s => s.mobilisasi);
 
         data.forEach(survey => {
             if (survey.informasiHaji) {
@@ -122,6 +128,10 @@ export function DashboardDisplay() {
                 const koperSum = Object.values(survey.penjemputanKoper).reduce((a, b) => a + b, 0);
                 totalIpkScore += (koperSum / (koperQuestionKeys.length * 5)) * 100;
             }
+            if (survey.mobilisasi) {
+                const mobilisasiSum = Object.values(survey.mobilisasi).reduce((a, b) => a + b, 0);
+                totalImhScore += (mobilisasiSum / (mobilisasiQuestionKeys.length * 5)) * 100;
+            }
             
             Object.keys(informasiTotals).forEach(key => {
                 informasiTotals[key] += survey.informasiHaji?.[key] || 0;
@@ -134,6 +144,7 @@ export function DashboardDisplay() {
             ikp: numSurveys > 0 ? totalIkpScore / numSurveys : 0,
             ibv: surveysWithBiovisa.length > 0 ? totalIbvScore / surveysWithBiovisa.length : 0,
             ipk: surveysWithKoper.length > 0 ? totalIpkScore / surveysWithKoper.length : 0,
+            imh: surveysWithMobilisasi.length > 0 ? totalImhScore / surveysWithMobilisasi.length : 0,
         });
 
         const newChartData = Object.keys(informasiTotals).map(key => ({
@@ -163,10 +174,12 @@ export function DashboardDisplay() {
                 ...Object.fromEntries(Object.entries(s.rekomendasiPaspor || {}).map(([k,v]) => [`rekomendasiPaspor_${k}`,v])),
                 ...Object.fromEntries(Object.entries(s.biovisa || {}).map(([k,v]) => [`biovisa_${k}`,v])),
                 ...Object.fromEntries(Object.entries(s.penjemputanKoper || {}).map(([k,v]) => [`penjemputanKoper_${k}`,v])),
+                ...Object.fromEntries(Object.entries(s.mobilisasi || {}).map(([k,v]) => [`mobilisasi_${k}`,v])),
                 saranInformasiHaji: s.saranInformasiHaji || '',
                 saranRekomendasiPaspor: s.saranRekomendasiPaspor || '',
                 saranBiovisa: s.saranBiovisa || '',
                 saranPenjemputanKoper: s.saranPenjemputanKoper || '',
+                saranMobilisasi: s.saranMobilisasi || '',
                 tidakDiarahkan: s.tidakDiarahkan,
                 perbaikan: s.perbaikan.join('; '),
                 createdAt: s.createdAt.toDate().toISOString(),
@@ -216,10 +229,11 @@ export function DashboardDisplay() {
     if (loading) {
         return (
              <div className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-6">
                     <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-4 w-32" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-4 w-28" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-4 w-28" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-4 w-28" /></CardHeader><CardContent><Skeleton className="h-7 w-10" /></CardContent></Card>
                 </div>
@@ -244,7 +258,7 @@ export function DashboardDisplay() {
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Indeks Informasi Haji (IIH)</CardTitle>
@@ -252,7 +266,7 @@ export function DashboardDisplay() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{scores.iih.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
+                        <p className="text-xs text-muted-foreground">Nilai rata-rata</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -262,7 +276,7 @@ export function DashboardDisplay() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{scores.ikp.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
+                        <p className="text-xs text-muted-foreground">Nilai rata-rata</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -272,7 +286,7 @@ export function DashboardDisplay() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{scores.ibv.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
+                        <p className="text-xs text-muted-foreground">Nilai rata-rata</p>
                     </CardContent>
                 </Card>
                  <Card>
@@ -282,7 +296,17 @@ export function DashboardDisplay() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{scores.ipk.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
+                        <p className="text-xs text-muted-foreground">Nilai rata-rata</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Indeks Mobilisasi Haji (IMH)</CardTitle>
+                        <AreaChart className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{scores.imh.toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">Nilai rata-rata</p>
                     </CardContent>
                 </Card>
                 <Card>

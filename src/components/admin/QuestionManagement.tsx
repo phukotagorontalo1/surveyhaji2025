@@ -50,6 +50,13 @@ const DEFAULT_QUESTIONS = {
         pk5: 'Seberapa puas Anda terhadap koordinasi antara petugas dan jemaah dalam proses penjemputan dan penyerahan koper?',
         pk6: 'Seberapa puas Anda secara keseluruhan terhadap layanan penjemputan dan penyerahan koper?',
     },
+    mobilisasi: {
+        mh1: "Seberapa puas Anda terhadap kejelasan informasi jadwal keberangkatan dan rute perjalanan?",
+        mh2: "Seberapa puas Anda terhadap jumlah armada yang disediakan sesuai kebutuhan jumlah jemaah?",
+        mh3: "Seberapa puas Anda terhadap keteraturan dan koordinasi saat proses naik-turun kendaraan?",
+        mh4: "Seberapa puas Anda terhadap bantuan petugas selama proses mobilisasi jemaah?",
+        mh5: "Seberapa puas Anda secara keseluruhan terhadap pelayanan mobilisasi dari Masjid Jami' ke Asrama Haji?"
+    },
     perbaikan: {
         kebijakan: "Kebijakan pelayanan",
         sdm: "Profesionalisme SDM",
@@ -83,8 +90,11 @@ const questionStructure = {
     penjemputanKoper: {
         title: "V. Pelayanan Penjemputan dan Penyerahan Koper"
     },
+    mobilisasi: {
+        title: "VI. Mobilisasi ke Asrama Haji"
+    },
     perbaikan: {
-        title: "VI. Opsi Perbaikan"
+        title: "VII. Opsi Perbaikan"
     }
 }
 
@@ -111,6 +121,7 @@ export default function QuestionManagement() {
                         rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
                         biovisa: { ...DEFAULT_QUESTIONS.biovisa, ...(dbConfig.biovisa || {}) },
                         penjemputanKoper: { ...DEFAULT_QUESTIONS.penjemputanKoper, ...(dbConfig.penjemputanKoper || {}) },
+                        mobilisasi: { ...DEFAULT_QUESTIONS.mobilisasi, ...(dbConfig.mobilisasi || {}) },
                         perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
                     };
                     setQuestionConfig(mergedConfig);
@@ -189,8 +200,8 @@ export default function QuestionManagement() {
             </header>
             
             <Card>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 pt-6">
-                    <div className="space-y-4">
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 pt-6">
+                    <div className="space-y-4 lg:col-span-1">
                         <h3 className="font-semibold text-lg text-primary">{questionStructure.informasiHaji.title}</h3>
                         {Object.entries(questionStructure.informasiHaji.sections).map(([sectionTitle, keys]) => (
                             <div key={sectionTitle} className="space-y-2 pt-2">
@@ -204,40 +215,54 @@ export default function QuestionManagement() {
                             </div>
                         ))}
                     </div>
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">{questionStructure.rekomendasiPaspor.title}</h3>
-                        {Object.keys(questionConfig.rekomendasiPaspor).map(key => (
-                            <div key={key}>
-                                <Label htmlFor={`rekomendasiPaspor-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
-                                <Textarea id={`rekomendasiPaspor-${key}`} value={questionConfig.rekomendasiPaspor[key]} onChange={(e) => handleConfigChange('rekomendasiPaspor', key, e.target.value)} className="mt-1"/>
-                            </div>
-                        ))}
+                    <div className="space-y-4 lg:col-span-1">
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg text-primary">{questionStructure.rekomendasiPaspor.title}</h3>
+                            {Object.keys(questionConfig.rekomendasiPaspor).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`rekomendasiPaspor-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Textarea id={`rekomendasiPaspor-${key}`} value={questionConfig.rekomendasiPaspor[key]} onChange={(e) => handleConfigChange('rekomendasiPaspor', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
+                         <div className="space-y-4 mt-8">
+                            <h3 className="font-semibold text-lg text-primary">{questionStructure.biovisa.title}</h3>
+                            {Object.keys(questionConfig.biovisa).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`biovisa-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Textarea id={`biovisa-${key}`} value={questionConfig.biovisa[key]} onChange={(e) => handleConfigChange('biovisa', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">{questionStructure.biovisa.title}</h3>
-                        {Object.keys(questionConfig.biovisa).map(key => (
-                            <div key={key}>
-                                <Label htmlFor={`biovisa-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
-                                <Textarea id={`biovisa-${key}`} value={questionConfig.biovisa[key]} onChange={(e) => handleConfigChange('biovisa', key, e.target.value)} className="mt-1"/>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">{questionStructure.penjemputanKoper.title}</h3>
-                        {Object.keys(questionConfig.penjemputanKoper).map(key => (
-                            <div key={key}>
-                                <Label htmlFor={`penjemputanKoper-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
-                                <Textarea id={`penjemputanKoper-${key}`} value={questionConfig.penjemputanKoper[key]} onChange={(e) => handleConfigChange('penjemputanKoper', key, e.target.value)} className="mt-1"/>
-                            </div>
-                        ))}
-
-                        <h3 className="font-semibold text-lg text-primary mt-8">{questionStructure.perbaikan.title}</h3>
-                        {Object.keys(questionConfig.perbaikan).map(key => (
-                            <div key={key}>
-                                <Label htmlFor={`perbaikan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
-                                <Input id={`perbaikan-${key}`} value={questionConfig.perbaikan[key]} onChange={(e) => handleConfigChange('perbaikan', key, e.target.value)} className="mt-1"/>
-                            </div>
-                        ))}
+                    <div className="space-y-4 lg:col-span-1">
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg text-primary">{questionStructure.penjemputanKoper.title}</h3>
+                            {Object.keys(questionConfig.penjemputanKoper).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`penjemputanKoper-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Textarea id={`penjemputanKoper-${key}`} value={questionConfig.penjemputanKoper[key]} onChange={(e) => handleConfigChange('penjemputanKoper', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="space-y-4 mt-8">
+                            <h3 className="font-semibold text-lg text-primary">{questionStructure.mobilisasi.title}</h3>
+                            {Object.keys(questionConfig.mobilisasi).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`mobilisasi-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Textarea id={`mobilisasi-${key}`} value={questionConfig.mobilisasi[key]} onChange={(e) => handleConfigChange('mobilisasi', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="space-y-4 mt-8">
+                            <h3 className="font-semibold text-lg text-primary">{questionStructure.perbaikan.title}</h3>
+                            {Object.keys(questionConfig.perbaikan).map(key => (
+                                <div key={key}>
+                                    <Label htmlFor={`perbaikan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                    <Input id={`perbaikan-${key}`} value={questionConfig.perbaikan[key]} onChange={(e) => handleConfigChange('perbaikan', key, e.target.value)} className="mt-1"/>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
