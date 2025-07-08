@@ -160,7 +160,7 @@ export function SurveyForm() {
   }, [toast]);
   
   const informasiHajiQuestions = useMemo(() => {
-    if (!config) return {};
+    if (!config || !config.informasiHaji) return {};
     return {
         "A. Kejelasan Informasi Tahapan Haji": [
             { id: 'q1', label: config.informasiHaji.q1, ratings: KUALITAS_RATINGS },
@@ -186,7 +186,7 @@ export function SurveyForm() {
   }, [config]);
 
   const penyimpanganQuestions = useMemo(() => {
-      if (!config) return [];
+      if (!config || !config.penyimpangan) return [];
       return Object.entries(config.penyimpangan).map(([id, label]) => ({ 
           id, 
           label, 
@@ -195,7 +195,7 @@ export function SurveyForm() {
   }, [config]);
 
   const perbaikanItems = useMemo(() => {
-    if (!config) return [];
+    if (!config || !config.perbaikan) return [];
     const allItems = Object.entries(config.perbaikan).map(([id, label]) => ({ id, label: label as string }));
     const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
     const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
