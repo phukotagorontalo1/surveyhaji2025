@@ -8,7 +8,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Responsive
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Loader2, FileDown, AreaChart, Users } from "lucide-react"
+import { Loader2, FileDown, AreaChart, Users, Calculator } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -167,8 +167,6 @@ export function DashboardDisplay() {
         const koperQuestionKeys = Object.keys(config.penjemputanKoper || {});
         const mobilisasiQuestionKeys = Object.keys(config.mobilisasi || {});
 
-        const informasiTotals: { [key: string]: number } = informasiQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
-
         const surveysWithBiovisa = data.filter(s => s.biovisa);
         const surveysWithKoper = data.filter(s => s.penjemputanKoper);
         const surveysWithMobilisasi = data.filter(s => s.mobilisasi);
@@ -177,9 +175,6 @@ export function DashboardDisplay() {
             if (survey.informasiHaji && informasiQuestionKeys.length > 0) {
                 const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
                 totalIihScore += (informasiSum / (informasiQuestionKeys.length * 5)) * 100;
-                Object.keys(informasiTotals).forEach(key => {
-                  informasiTotals[key] += survey.informasiHaji?.[key] || 0;
-                });
             }
             if (survey.rekomendasiPaspor && pasporQuestionKeys.length > 0) {
                 const pasporSum = Object.values(survey.rekomendasiPaspor).reduce((a, b) => a + b, 0);
@@ -200,19 +195,22 @@ export function DashboardDisplay() {
         });
         
         const numSurveys = data.length;
-        setScores({
+        const newScores = {
             iih: numSurveys > 0 ? totalIihScore / numSurveys : 0,
             ikp: numSurveys > 0 ? totalIkpScore / numSurveys : 0,
             ibv: surveysWithBiovisa.length > 0 ? totalIbvScore / surveysWithBiovisa.length : 0,
             ipk: surveysWithKoper.length > 0 ? totalIpkScore / surveysWithKoper.length : 0,
             imh: surveysWithMobilisasi.length > 0 ? totalImhScore / surveysWithMobilisasi.length : 0,
-        });
+        };
+        setScores(newScores);
 
-        const newChartData = Object.keys(informasiTotals).map(key => ({
-            name: `Q${key.substring(1)}`, // Shorten name for chart, e.g., "Q1", "Q2"
-            fullName: config.informasiHaji[key],
-            "Rata-rata Skor": numSurveys > 0 ? informasiTotals[key] / numSurveys : 0,
-        }));
+        const newChartData = [
+            { name: "IIH", 'Skor Indeks': parseFloat(newScores.iih.toFixed(2)), fullName: "Indeks Informasi Haji" },
+            { name: "IKP", 'Skor Indeks': parseFloat(newScores.ikp.toFixed(2)), fullName: "Indeks Kepuasan Paspor" },
+            { name: "IBV", 'Skor Indeks': parseFloat(newScores.ibv.toFixed(2)), fullName: "Indeks Biovisa" },
+            { name: "IPK", 'Skor Indeks': parseFloat(newScores.ipk.toFixed(2)), fullName: "Indeks Penjemputan Koper" },
+            { name: "IMH", 'Skor Indeks': parseFloat(newScores.imh.toFixed(2)), fullName: "Indeks Mobilisasi Haji" },
+        ];
         setChartData(newChartData);
     };
 
@@ -280,7 +278,7 @@ export function DashboardDisplay() {
                 <div className="p-2 bg-background border rounded-md shadow-lg">
                     <p className="font-bold">{data.name}</p>
                     <p className="text-sm text-muted-foreground">{data.fullName}</p>
-                    <p className="text-primary mt-2">Rata-rata: {payload[0].value.toFixed(2)}</p>
+                    <p className="text-primary mt-2">Skor Indeks: {payload[0].value.toFixed(2)}</p>
                 </div>
             );
         }
@@ -384,8 +382,8 @@ export function DashboardDisplay() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Grafik Informasi Tahapan Haji</CardTitle>
-                    <CardDescription>Rata-rata skor untuk setiap aspek informasi (skala 1-5).</CardDescription>
+                    <CardTitle>Grafik Indeks Pelayanan Haji</CardTitle>
+                    <CardDescription>Visualisasi perbandingan skor akhir untuk setiap indeks pelayanan.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[350px] w-full">
@@ -393,12 +391,39 @@ export function DashboardDisplay() {
                             <BarChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" interval={0} style={{ fontSize: '12px' }} />
-                                <YAxis domain={[0, 5]} />
+                                <YAxis domain={[0, 100]} />
                                 <Tooltip content={<CustomTooltip />} cursor={{fill: 'hsl(var(--muted))'}} />
-                                <Bar dataKey="Rata-rata Skor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                <Legend />
+                                <Bar dataKey="Skor Indeks" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-6 w-6 text-primary" />
+                        <span>Bagaimana Indeks Dihitung?</span>
+                    </CardTitle>
+                    <CardDescription>
+                        Setiap indeks kepuasan dihitung berdasarkan rata-rata jawaban responden dan dikonversi ke skala 100.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                   <p className="text-sm">
+                       Nilai Indeks Pelayanan dihitung menggunakan pendekatan Nilai Rata-Rata Tertimbang. Setiap jawaban responden pada skala 1-5 diberi bobot yang setara.
+                   </p>
+                    <div className="bg-muted p-4 rounded-md text-center">
+                        <p className="font-mono text-sm sm:text-base">
+                            Indeks = (Total Nilai Persepsi / Total Nilai Maksimal) x 100
+                        </p>
+                    </div>
+                     <p className="text-xs text-muted-foreground pt-2">
+                       <strong>Total Nilai Persepsi</strong> adalah jumlah skor jawaban dari semua responden untuk satu unit layanan. <br/>
+                       <strong>Total Nilai Maksimal</strong> adalah jumlah responden dikalikan jumlah pertanyaan dikalikan 5 (nilai tertinggi).
+                   </p>
                 </CardContent>
             </Card>
 
