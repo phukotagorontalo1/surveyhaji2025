@@ -8,10 +8,10 @@ export default function Home() {
       <div className="mx-auto max-w-5xl">
         <header className="text-center mb-8">
           <h1 className="font-headline text-4xl sm:text-5xl font-bold text-primary">
-            Survey Kepuasan Masyarakat & Persepsi Anti Korupsi
+            Survey Pelayanan Haji
           </h1>
           <p className="font-headline text-lg sm:text-xl text-foreground/80 mt-2">
-            Pelayanan Haji Tahun 2025 M / 1446 H
+            Tahun 2025 M / 1446 H
           </p>
           <p className="text-muted-foreground mt-1">
             Kantor Kementerian Agama Kota Gorontalo
