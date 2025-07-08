@@ -47,7 +47,6 @@ const PEKERJAAN_OPTIONS = ["Pelajar/Mahasiswa", "PNS", "BUMN/BUMD", "Swasta", "P
 const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun", "51-60 tahun", "Di atas 60 tahun"];
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
-// Default ratings, can be overridden if needed in the future
 const KUALITAS_RATINGS = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netral", 4: "Setuju", 5: "Sangat Setuju" };
 const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Tidak Pernah Ada" };
 const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup", 4: "Mudah", 5: "Sangat Mudah" };
@@ -116,7 +115,7 @@ export function SurveyForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<any>(DEFAULT_QUESTIONS);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
@@ -147,7 +146,14 @@ export function SurveyForm() {
         try {
             const configDoc = await getDoc(doc(db, "config", "questions"));
             if (configDoc.exists()) {
-                setConfig(configDoc.data());
+                const dbConfig = configDoc.data();
+                // Deep merge with defaults to prevent partial data issues
+                const mergedConfig = {
+                    informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
+                    penyimpangan: { ...DEFAULT_QUESTIONS.penyimpangan, ...(dbConfig.penyimpangan || {}) },
+                    perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
+                };
+                setConfig(mergedConfig);
             } else {
                 setConfig(DEFAULT_QUESTIONS);
             }
@@ -187,7 +193,7 @@ export function SurveyForm() {
     return () => unsubscribe();
   }, [toast]);
   
-  const activeConfig = config || DEFAULT_QUESTIONS;
+  const activeConfig = config;
 
   const informasiHajiQuestions = useMemo(() => {
     return {
@@ -537,5 +543,3 @@ export function SurveyForm() {
     </Form>
   )
 }
-
-    
