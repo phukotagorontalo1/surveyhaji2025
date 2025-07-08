@@ -13,7 +13,7 @@ import {
 import { useState, useEffect, useMemo } from "react"
 import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
 import { db, auth } from "@/lib/firebase"
-import { signInAnonymously } from "firebase/auth"
+import { signInAnonymously, onAuthStateChanged } from "firebase/auth"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -48,9 +48,9 @@ const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun"
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
 // Default ratings, can be overridden if needed in the future
-const KUALITAS_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" };
-const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Hampir Tdk Ada", 6: "Tidak Ada Sama Sekali" };
-const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup Mudah", 4: "Mudah", 5: "Sangat Mudah", 6: "Sempurna" };
+const KUALITAS_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup", 4: "Mudah", 5: "Sangat Mudah" };
+const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Tidak Pernah Ada" };
+const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup", 4: "Mudah", 5: "Sangat Mudah" };
 
 const formSchema = z.object({
   nama: z.string().optional(),
@@ -60,12 +60,12 @@ const formSchema = z.object({
   jenisKelamin: z.enum(["Laki-laki", "Perempuan"], { required_error: "Jenis kelamin harus dipilih." }),
   pendidikan: z.string({ required_error: "Pendidikan terakhir harus dipilih." }),
   kualitas: z.object({
-    q1: z.number().min(1).max(6), q2: z.number().min(1).max(6), q3: z.number().min(1).max(6), q4: z.number().min(1).max(6),
-    q5: z.number().min(1).max(6), q6: z.number().min(1).max(6), q7: z.number().min(1).max(6), q8: z.number().min(1).max(6),
+    q1: z.number().min(1).max(5), q2: z.number().min(1).max(5), q3: z.number().min(1).max(5), q4: z.number().min(1).max(5),
+    q5: z.number().min(1).max(5), q6: z.number().min(1).max(5), q7: z.number().min(1).max(5), q8: z.number().min(1).max(5),
   }),
   penyimpangan: z.object({
-    p1: z.number().min(1).max(6), p2: z.number().min(1).max(6), p3: z.number().min(1).max(6),
-    p4: z.number().min(1).max(6), p5: z.number().min(1).max(6),
+    p1: z.number().min(1).max(5), p2: z.number().min(1).max(5), p3: z.number().min(1).max(5),
+    p4: z.number().min(1).max(5), p5: z.number().min(1).max(5),
   }),
   tidakDiarahkan: z.boolean().refine(val => val === true, { message: "Anda harus menyetujui pernyataan ini." }),
   perbaikan: z.array(z.string()).refine((value) => value.some((item) => item), {
@@ -114,40 +114,52 @@ export function SurveyForm() {
   });
 
   useEffect(() => {
-    const initializeForm = async () => {
-      try {
-        await signInAnonymously(auth);
-        
-        const configDoc = await getDoc(doc(db, "config", "questions"));
-        if (configDoc.exists()) {
-          setConfig(configDoc.data());
-        } else {
-          toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
+    const fetchConfig = async () => {
+        try {
+            const configDoc = await getDoc(doc(db, "config", "questions"));
+            if (configDoc.exists()) {
+                setConfig(configDoc.data());
+            } else {
+                toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
+            }
+        } catch (error) {
+            console.error("Error fetching config:", error);
+            toast({ variant: "destructive", title: "Gagal memuat konfigurasi.", description: "Pastikan Aturan Keamanan Firestore sudah benar." });
+        } finally {
+            setIsReady(true);
         }
-      } catch (error: any) {
-        console.error("Error during initialization: ", error);
-        if (error.code === 'auth/operation-not-allowed' || error.code === 'auth/admin-restricted-operation') {
-            toast({
-                variant: "destructive",
-                title: "Login Anonim Belum Diaktifkan",
-                description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
-            });
-        } else if (error.code === 'permission-denied') {
-            toast({ variant: "destructive", title: "Izin Ditolak", description: "Tidak dapat memuat konfigurasi. Pastikan Aturan Keamanan Firestore sudah benar." });
-        } else {
-            toast({
-              variant: "destructive",
-              title: "Gagal Terhubung",
-              description: "Terjadi kesalahan koneksi. Mohon muat ulang halaman.",
-            });
-        }
-      } finally {
-        setIsReady(true);
-      }
     };
 
-    initializeForm();
-  }, [toast]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in, see docs for a list of available properties
+            // https://firebase.google.com/docs/reference/js/firebase.User
+            console.log("User is signed in anonymously:", user.uid);
+            fetchConfig(); // Fetch config only after user is authenticated
+        } else {
+            // User is signed out
+            console.log("User is signed out, attempting to sign in anonymously.");
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously: ", error);
+                 if (error.code === 'auth/operation-not-allowed') {
+                    toast({
+                        variant: "destructive",
+                        title: "Login Anonim Belum Diaktifkan",
+                        description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
+                    });
+                } else {
+                    toast({
+                      variant: "destructive",
+                      title: "Gagal Terhubung",
+                      description: "Terjadi kesalahan koneksi. Mohon muat ulang halaman.",
+                    });
+                }
+            });
+        }
+    });
+
+    return () => unsubscribe(); // Cleanup subscription on unmount
+}, [toast]);
   
   const kualitasQuestions = useMemo(() => {
       if (!config) return [];
@@ -166,6 +178,7 @@ export function SurveyForm() {
     const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
     const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
     
+    // Ensure 'tidak_ada' is always last
     return tidakAdaItem ? [...otherItems, tidakAdaItem] : otherItems;
   }, [config]);
 
@@ -281,7 +294,7 @@ export function SurveyForm() {
                       {Icon && <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />}
                       <span>{index + 1}. {q.label}</span>
                     </FormLabel>
-                    <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
+                    <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} totalStars={5} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -307,7 +320,7 @@ export function SurveyForm() {
                       {Icon && <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />}
                       <span>{index + 1}. {q.label}</span>
                     </FormLabel>
-                    <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} /></FormControl>
+                    <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} totalStars={5} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -410,3 +423,5 @@ export function SurveyForm() {
     </Form>
   )
 }
+
+    

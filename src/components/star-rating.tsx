@@ -12,15 +12,14 @@ interface StarRatingProps {
 }
 
 const defaultRatingLabels: { [key: number]: string } = {
-    1: "Sangat Tidak Memadai",
-    2: "Tidak Memadai",
+    1: "Sangat Buruk",
+    2: "Buruk",
     3: "Cukup",
-    4: "Memadai",
-    5: "Sangat Memadai",
-    6: "Sempurna",
+    4: "Baik",
+    5: "Sangat Baik",
 };
 
-export function StarRating({ value, onChange, totalStars = 6, labels = defaultRatingLabels }: StarRatingProps) {
+export function StarRating({ value, onChange, totalStars = 5, labels = defaultRatingLabels }: StarRatingProps) {
   const [hoverValue, setHoverValue] = useState(0);
 
   return (
@@ -58,3 +57,5 @@ export function StarRating({ value, onChange, totalStars = 6, labels = defaultRa
     </div>
   );
 }
+
+    

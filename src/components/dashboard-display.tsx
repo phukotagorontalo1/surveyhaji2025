@@ -96,10 +96,10 @@ export function DashboardDisplay() {
 
         data.forEach(survey => {
             const kualitasSum = Object.values(survey.kualitas).reduce((a, b) => a + b, 0);
-            totalIkmScore += (kualitasSum / (kualitasQuestionKeys.length * 6)) * 100;
+            totalIkmScore += (kualitasSum / (kualitasQuestionKeys.length * 5)) * 100;
 
             const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
-            totalIpakScore += (penyimpanganSum / (penyimpanganQuestionKeys.length * 6)) * 100;
+            totalIpakScore += (penyimpanganSum / (penyimpanganQuestionKeys.length * 5)) * 100;
             
             Object.keys(kualitasTotals).forEach(key => {
                 kualitasTotals[key] += survey.kualitas[key] || 0;
@@ -234,7 +234,7 @@ export function DashboardDisplay() {
             <Card>
                 <CardHeader>
                     <CardTitle>Grafik Kualitas Pelayanan</CardTitle>
-                    <CardDescription>Rata-rata skor untuk setiap aspek kualitas pelayanan (skala 1-6).</CardDescription>
+                    <CardDescription>Rata-rata skor untuk setiap aspek kualitas pelayanan (skala 1-5).</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[350px] w-full">
@@ -242,7 +242,7 @@ export function DashboardDisplay() {
                             <BarChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} style={{ fontSize: '12px' }} />
-                                <YAxis domain={[0, 6]} />
+                                <YAxis domain={[0, 5]} />
                                 <Tooltip
                                     contentStyle={{ 
                                         backgroundColor: 'hsl(var(--background))', 
@@ -299,3 +299,5 @@ export function DashboardDisplay() {
         </div>
     )
 }
+
+    

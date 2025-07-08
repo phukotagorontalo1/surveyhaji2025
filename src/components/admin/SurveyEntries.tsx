@@ -118,10 +118,10 @@ export default function SurveyEntries() {
     const calculateScores = (survey: SurveyData) => {
         if (!questionConfig) return { ikm: 0, ipak: 0 };
         const kualitasSum = Object.values(survey.kualitas).reduce((a, b) => a + b, 0);
-        const ikm = (kualitasSum / (Object.keys(questionConfig.kualitas).length * 6)) * 100;
+        const ikm = (kualitasSum / (Object.keys(questionConfig.kualitas).length * 5)) * 100;
 
         const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
-        const ipak = (penyimpanganSum / (Object.keys(questionConfig.penyimpangan).length * 6)) * 100;
+        const ipak = (penyimpanganSum / (Object.keys(questionConfig.penyimpangan).length * 5)) * 100;
         
         return { ikm, ipak };
     };
@@ -301,7 +301,7 @@ export default function SurveyEntries() {
                                         <TableRow key={survey.id}>
                                             <TableCell>
                                                 <div className="font-medium">{survey.nama || 'Anonim'}</div>
-                                                <div className="text-sm text-muted-foreground">{survey.nomorHp}</div>
+                                                <div className="text-sm text-muted-foreground">{survey.nomorHp || "Tidak diisi"}</div>
                                             </TableCell>
                                             <TableCell>{survey.createdAt.toDate().toLocaleString('id-ID')}</TableCell>
                                             <TableCell>{ikm.toFixed(2)}</TableCell>
@@ -340,7 +340,7 @@ export default function SurveyEntries() {
                                                                             <h4 className="font-bold text-lg mb-2">II. Jawaban Kualitas Pelayanan</h4>
                                                                             <ul className="space-y-1 text-sm">
                                                                                 {Object.entries(survey.kualitas).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.kualitas[key]}:</span> <strong>{value}/6</strong></li>
+                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.kualitas[key]}:</span> <strong>{value}/5</strong></li>
                                                                                 ))}
                                                                             </ul>
                                                                         </div>
@@ -348,7 +348,7 @@ export default function SurveyEntries() {
                                                                             <h4 className="font-bold text-lg mb-2">III. Jawaban Penyimpangan</h4>
                                                                             <ul className="space-y-1 text-sm">
                                                                                 {Object.entries(survey.penyimpangan).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.penyimpangan[key]}:</span> <strong>{value}/6</strong></li>
+                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.penyimpangan[key]}:</span> <strong>{value}/5</strong></li>
                                                                                 ))}
                                                                             </ul>
                                                                         </div>
@@ -430,3 +430,5 @@ export default function SurveyEntries() {
         </div>
     );
 }
+
+    
