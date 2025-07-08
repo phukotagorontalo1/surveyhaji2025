@@ -58,14 +58,11 @@ const DEFAULT_QUESTIONS = {
         mh5: "Seberapa puas Anda secara keseluruhan terhadap pelayanan mobilisasi dari Masjid Jami' ke Asrama Haji?"
     },
     perbaikan: {
-        kebijakan: "Kebijakan pelayanan",
-        sdm: "Profesionalisme SDM",
-        sarpras: "Kualitas Sarana dan Prasarana",
-        sistem: "Sistem informasi dan pelayanan publik",
-        konsultasi: "Konsultasi dan pengaduan",
-        pungli: "Penghilangan Praktik pungli",
-        prosedur: "Penghilangan praktik diluar prosedur",
-        calo: "Penghilangan praktik percaloan",
+        informasi: "Penyampaian Informasi Tahapan Haji",
+        paspor: "Penerbitan Rekomendasi Paspor",
+        biovisa: "Perekaman Sidik Jari untuk Biovisa",
+        koper: "Pelayanan Penjemputan dan Penyerahan Koper",
+        mobilisasi: "Mobilisasi ke Asrama Haji",
         tidak_ada: "Tidak ada yang perlu diperbaiki"
     }
 };
@@ -116,13 +113,21 @@ export default function QuestionManagement() {
                     setQuestionConfig(DEFAULT_QUESTIONS);
                 } else {
                     const dbConfig = configSnap.data();
+                    
+                    // This logic is to handle the migration from the old 'perbaikan' structure.
+                    // If the config from DB contains an old key (like 'kebijakan'), we force the new default structure.
+                    // Otherwise, we merge to preserve any admin customizations.
+                    const perbaikanOptions = (dbConfig.perbaikan && dbConfig.perbaikan.kebijakan)
+                        ? DEFAULT_QUESTIONS.perbaikan
+                        : { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) };
+
                      const mergedConfig = {
                         informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
                         rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
                         biovisa: { ...DEFAULT_QUESTIONS.biovisa, ...(dbConfig.biovisa || {}) },
                         penjemputanKoper: { ...DEFAULT_QUESTIONS.penjemputanKoper, ...(dbConfig.penjemputanKoper || {}) },
                         mobilisasi: { ...DEFAULT_QUESTIONS.mobilisasi, ...(dbConfig.mobilisasi || {}) },
-                        perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
+                        perbaikan: perbaikanOptions,
                     };
                     setQuestionConfig(mergedConfig);
                 }
