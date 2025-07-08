@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { 
   Check, Loader2, Info, BookOpen, Clock, Languages, Accessibility, Rss, Calendar,
   Presentation, Star, ShieldCheck, HandCoins, FileX2, UserX, PackageX, ShieldQuestion,
-  Timer, Smile, MessagesSquare, MousePointerClick, Fingerprint
+  Timer, Smile, MessagesSquare, MousePointerClick, Fingerprint, Users, Package
 } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
 import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
@@ -51,6 +51,7 @@ const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP
 const KUALITAS_RATINGS = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netral", 4: "Setuju", 5: "Sangat Setuju" };
 const REKOMENDASI_PASPOR_RATINGS = { 1: "Sangat Tidak Puas", 2: "Tidak Puas", 3: "Cukup Puas", 4: "Puas", 5: "Sangat Puas" };
 const BIOVISA_RATINGS = { 1: "Sangat Tidak Puas", 2: "Tidak Puas", 3: "Cukup Puas", 4: "Puas", 5: "Sangat Puas" };
+const PENJEMPUTAN_KOPER_RATINGS = { 1: "Sangat Tidak Puas", 2: "Tidak Puas", 3: "Cukup Puas", 4: "Puas", 5: "Sangat Puas" };
 
 const DEFAULT_QUESTIONS = {
     informasiHaji: {
@@ -80,6 +81,14 @@ const DEFAULT_QUESTIONS = {
         bv4: 'Seberapa profesional dan ramah petugas yang melayani perekaman sidik jari?',
         bv5: 'Seberapa puas Anda terhadap komunikasi atau notifikasi jadwal perekaman sidik jari?',
         bv6: 'Seberapa puas Anda terhadap keseluruhan layanan perekaman sidik jari untuk keperluan biovisa?',
+    },
+    penjemputanKoper: {
+        pk1: 'Seberapa puas Anda terhadap ketepatan waktu penjemputan dan penyerahan koper jemaah?',
+        pk2: 'Seberapa puas Anda terhadap kejelasan informasi mengenai jadwal dan lokasi penjemputan dan penyerahan koper?',
+        pk3: 'Seberapa puas Anda terhadap kemudahan proses penyerahan koper kepada petugas?',
+        pk4: 'Seberapa puas Anda terhadap sikap dan pelayanan petugas saat penjemputan dan penyerahan koper?',
+        pk5: 'Seberapa puas Anda terhadap koordinasi antara petugas dan jemaah dalam proses penjemputan dan penyerahan koper?',
+        pk6: 'Seberapa puas Anda secara keseluruhan terhadap layanan penjemputan dan penyerahan koper?',
     },
     perbaikan: {
         kebijakan: "Kebijakan pelayanan",
@@ -117,6 +126,11 @@ const formSchema = z.object({
     bv4: z.number().min(1, "Penilaian wajib diisi").max(5), bv5: z.number().min(1, "Penilaian wajib diisi").max(5), bv6: z.number().min(1, "Penilaian wajib diisi").max(5),
   }),
   saranBiovisa: z.string().optional(),
+  penjemputanKoper: z.object({
+    pk1: z.number().min(1, "Penilaian wajib diisi").max(5), pk2: z.number().min(1, "Penilaian wajib diisi").max(5), pk3: z.number().min(1, "Penilaian wajib diisi").max(5),
+    pk4: z.number().min(1, "Penilaian wajib diisi").max(5), pk5: z.number().min(1, "Penilaian wajib diisi").max(5), pk6: z.number().min(1, "Penilaian wajib diisi").max(5),
+  }),
+  saranPenjemputanKoper: z.string().optional(),
   tidakDiarahkan: z.boolean().refine(val => val === true, { message: "Anda harus menyetujui pernyataan ini." }),
   perbaikan: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Anda harus memilih setidaknya satu opsi.",
@@ -133,13 +147,14 @@ export function SurveyForm() {
   const [isLoading, setIsLoading] = useState(true);
   const [config, setConfig] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const questionIcons: { [key: string]: React.ElementType } = {
       q1: Info, q2: BookOpen, q3: Languages, q4: Accessibility, q5: Rss,
       q6: Clock, q7: Calendar, q8: Presentation, q9: Presentation, q10: Star,
       rp1: Info, rp2: MousePointerClick, rp3: Timer, rp4: Smile, rp5: MessagesSquare, rp6: Star,
       bv1: Info, bv2: MousePointerClick, bv3: Accessibility, bv4: Smile, bv5: MessagesSquare, bv6: Star,
+      pk1: Timer, pk2: Info, pk3: Package, pk4: Smile, pk5: Users, pk6: Star,
   };
   
   const form = useForm<FormSchemaType>({
@@ -154,6 +169,8 @@ export function SurveyForm() {
       saranRekomendasiPaspor: "",
       biovisa: { bv1: 0, bv2: 0, bv3: 0, bv4: 0, bv5: 0, bv6: 0 },
       saranBiovisa: "",
+      penjemputanKoper: { pk1: 0, pk2: 0, pk3: 0, pk4: 0, pk5: 0, pk6: 0 },
+      saranPenjemputanKoper: "",
       tidakDiarahkan: false,
       perbaikan: [],
       tandaTangan: "",
@@ -174,6 +191,7 @@ export function SurveyForm() {
                     informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
                     rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
                     biovisa: { ...DEFAULT_QUESTIONS.biovisa, ...(dbConfig.biovisa || {}) },
+                    penjemputanKoper: { ...DEFAULT_QUESTIONS.penjemputanKoper, ...(dbConfig.penjemputanKoper || {}) },
                     perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
                 };
                 setConfig(mergedConfig);
@@ -258,6 +276,15 @@ export function SurveyForm() {
       }));
   }, [activeConfig]);
 
+  const penjemputanKoperQuestions = useMemo(() => {
+      if (!activeConfig?.penjemputanKoper) return [];
+      return Object.entries(activeConfig.penjemputanKoper).map(([id, label]) => ({ 
+          id, 
+          label: label as string, 
+          ratings: PENJEMPUTAN_KOPER_RATINGS
+      }));
+  }, [activeConfig]);
+
   const perbaikanItems = useMemo(() => {
     if (!activeConfig?.perbaikan) return [];
     const allItems = Object.entries(activeConfig.perbaikan).map(([id, label]) => ({ id, label: label as string }));
@@ -273,6 +300,7 @@ export function SurveyForm() {
         case 2: fieldsToValidate = Object.keys(form.getValues().informasiHaji).map(k => `informasiHaji.${k}` as FieldPath<FormSchemaType>); break;
         case 3: fieldsToValidate = Object.keys(form.getValues().rekomendasiPaspor).map(k => `rekomendasiPaspor.${k}` as FieldPath<FormSchemaType>); break;
         case 4: fieldsToValidate = Object.keys(form.getValues().biovisa).map(k => `biovisa.${k}` as FieldPath<FormSchemaType>); break;
+        case 5: fieldsToValidate = Object.keys(form.getValues().penjemputanKoper).map(k => `penjemputanKoper.${k}` as FieldPath<FormSchemaType>); break;
     }
     
     const isValid = await form.trigger(fieldsToValidate);
@@ -538,11 +566,58 @@ export function SurveyForm() {
             </Card>
         )}
 
-
         {currentStep === 5 && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline text-2xl">V. Evaluasi dan Verifikasi</CardTitle>
+                    <CardTitle className="font-headline text-2xl">V. Pelayanan Penjemputan dan Penyerahan Koper</CardTitle>
+                    <CardDescription>
+                        Beri penilaian terhadap setiap pernyataan berikut sesuai dengan pengalaman Anda di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong>.
+                        Bagian {currentStep} dari {totalSteps}.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="text-sm text-muted-foreground bg-secondary/50 p-4 rounded-md space-y-2">
+                        <p className="font-semibold text-foreground">Petunjuk:</p>
+                        <p>Gunakan skala berikut:</p>
+                        <ul className="list-decimal list-inside columns-2 sm:columns-3 md:columns-5 text-sm">
+                            <li>Sangat Tidak Puas</li>
+                            <li>Tidak Puas</li>
+                            <li>Cukup Puas</li>
+                            <li>Puas</li>
+                            <li>Sangat Puas</li>
+                        </ul>
+                    </div>
+                    {penjemputanKoperQuestions.map((q: any) => {
+                        const Icon = questionIcons[q.id];
+                        return (
+                        <FormField key={q.id} control={form.control} name={`penjemputanKoper.${q.id as 'pk1'}`} render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="flex items-start gap-3">
+                                {Icon && <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />}
+                                <span>{q.label}</span>
+                            </FormLabel>
+                            <FormControl><StarRating value={field.value} onChange={field.onChange} labels={q.ratings} totalStars={5} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )} />
+                        )
+                    })}
+                    <Separator />
+                    <FormField control={form.control} name="saranPenjemputanKoper" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Apakah ada saran atau masukan untuk perbaikan layanan penjemputan dan penyerahan koper? (Opsional)</FormLabel>
+                            <FormControl><Textarea placeholder="Tuliskan saran Anda di sini..." className="resize-y" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </CardContent>
+            </Card>
+        )}
+
+        {currentStep === 6 && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline text-2xl">VI. Evaluasi dan Verifikasi</CardTitle>
                     <CardDescription>
                     Masukan Anda sangat berarti untuk perbaikan layanan kami di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong>.
                     Bagian {currentStep} dari {totalSteps}.

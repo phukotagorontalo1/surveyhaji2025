@@ -21,7 +21,7 @@ export default function HasilPage() {
             Terima kasih telah berpartisipasi dalam Survey Kepuasan Masyarakat Pelayanan Haji dan Rekomendasi Paspor. Masukan Anda sangat berharga bagi kami untuk perbaikan layanan di masa mendatang.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-secondary/50 p-6 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-secondary/50 p-6 rounded-lg">
               <div className="text-center">
                   <h3 className="font-bold text-lg text-primary">Indeks Informasi Haji (IIH)</h3>
                   <p className="font-headline text-5xl font-bold text-primary my-2">88.50</p>
@@ -35,6 +35,11 @@ export default function HasilPage() {
               <div className="text-center">
                   <h3 className="font-bold text-lg text-primary">Indeks Biovisa (IBV)</h3>
                   <p className="font-headline text-5xl font-bold text-primary my-2">90.75</p>
+                  <p className="font-bold text-green-600">Sangat Baik</p>
+              </div>
+              <div className="text-center">
+                  <h3 className="font-bold text-lg text-primary">Indeks Penjemputan Koper (IPK)</h3>
+                  <p className="font-headline text-5xl font-bold text-primary my-2">91.20</p>
                   <p className="font-bold text-green-600">Sangat Baik</p>
               </div>
           </div>

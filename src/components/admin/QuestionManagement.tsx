@@ -42,6 +42,14 @@ const DEFAULT_QUESTIONS = {
         bv5: 'Seberapa puas Anda terhadap komunikasi atau notifikasi jadwal perekaman sidik jari?',
         bv6: 'Seberapa puas Anda terhadap keseluruhan layanan perekaman sidik jari untuk keperluan biovisa?',
     },
+    penjemputanKoper: {
+        pk1: 'Seberapa puas Anda terhadap ketepatan waktu penjemputan dan penyerahan koper jemaah?',
+        pk2: 'Seberapa puas Anda terhadap kejelasan informasi mengenai jadwal dan lokasi penjemputan dan penyerahan koper?',
+        pk3: 'Seberapa puas Anda terhadap kemudahan proses penyerahan koper kepada petugas?',
+        pk4: 'Seberapa puas Anda terhadap sikap dan pelayanan petugas saat penjemputan dan penyerahan koper?',
+        pk5: 'Seberapa puas Anda terhadap koordinasi antara petugas dan jemaah dalam proses penjemputan dan penyerahan koper?',
+        pk6: 'Seberapa puas Anda secara keseluruhan terhadap layanan penjemputan dan penyerahan koper?',
+    },
     perbaikan: {
         kebijakan: "Kebijakan pelayanan",
         sdm: "Profesionalisme SDM",
@@ -72,8 +80,11 @@ const questionStructure = {
     biovisa: {
         title: "IV. Perekaman Sidik Jari untuk Biovisa"
     },
+    penjemputanKoper: {
+        title: "V. Pelayanan Penjemputan dan Penyerahan Koper"
+    },
     perbaikan: {
-        title: "V. Opsi Perbaikan"
+        title: "VI. Opsi Perbaikan"
     }
 }
 
@@ -99,6 +110,7 @@ export default function QuestionManagement() {
                         informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
                         rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
                         biovisa: { ...DEFAULT_QUESTIONS.biovisa, ...(dbConfig.biovisa || {}) },
+                        penjemputanKoper: { ...DEFAULT_QUESTIONS.penjemputanKoper, ...(dbConfig.penjemputanKoper || {}) },
                         perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
                     };
                     setQuestionConfig(mergedConfig);
@@ -177,7 +189,7 @@ export default function QuestionManagement() {
             </header>
             
             <Card>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 pt-6">
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 pt-6">
                     <div className="space-y-4">
                         <h3 className="font-semibold text-lg text-primary">{questionStructure.informasiHaji.title}</h3>
                         {Object.entries(questionStructure.informasiHaji.sections).map(([sectionTitle, keys]) => (
@@ -207,6 +219,15 @@ export default function QuestionManagement() {
                             <div key={key}>
                                 <Label htmlFor={`biovisa-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
                                 <Textarea id={`biovisa-${key}`} value={questionConfig.biovisa[key]} onChange={(e) => handleConfigChange('biovisa', key, e.target.value)} className="mt-1"/>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-lg text-primary">{questionStructure.penjemputanKoper.title}</h3>
+                        {Object.keys(questionConfig.penjemputanKoper).map(key => (
+                            <div key={key}>
+                                <Label htmlFor={`penjemputanKoper-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                <Textarea id={`penjemputanKoper-${key}`} value={questionConfig.penjemputanKoper[key]} onChange={(e) => handleConfigChange('penjemputanKoper', key, e.target.value)} className="mt-1"/>
                             </div>
                         ))}
 
