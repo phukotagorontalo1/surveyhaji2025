@@ -126,10 +126,12 @@ export default function SurveyEntries() {
         if (!questionConfig) return { iih: 0, ikp: 0, ibv: 0, ipk: 0, imh: 0 };
 
         const calculateIndex = (surveySection: { [key: string]: number } | undefined, configSection: { [key: string]: any } | undefined) => {
-            if (!surveySection || !configSection) return 0;
+            if (!surveySection || !configSection || Object.keys(configSection).length === 0) return 0;
             const sum = Object.values(surveySection).reduce((a, b) => a + b, 0);
             const count = Object.keys(configSection).length;
-            return count > 0 ? (sum / (count * 5)) * 100 : 0;
+            const maxScore = count * 5;
+            if (maxScore === 0) return 0;
+            return (sum / maxScore) * 100;
         };
 
         const iih = calculateIndex(survey.informasiHaji, questionConfig.informasiHaji);
@@ -193,19 +195,19 @@ export default function SurveyEntries() {
                 'Usia': s.usia,
                 'Jenis Kelamin': s.jenisKelamin,
                 'Pendidikan': s.pendidikan,
-                ...(s.informasiHaji && questionConfig.informasiHaji ? Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji - ${questionConfig.informasiHaji[k] || k}`,v])) : {}),
+                ...(s.informasiHaji && questionConfig?.informasiHaji ? Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji - ${questionConfig?.informasiHaji?.[k] || k}`,v])) : {}),
                 'IIH': iih.toFixed(2),
                  'Saran Informasi Haji': s.saranInformasiHaji || '',
-                ...(s.rekomendasiPaspor && questionConfig.rekomendasiPaspor ? Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig.rekomendasiPaspor[k] || k}`,v])) : {}),
+                ...(s.rekomendasiPaspor && questionConfig?.rekomendasiPaspor ? Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig?.rekomendasiPaspor?.[k] || k}`,v])) : {}),
                 'IKP': ikp.toFixed(2),
                 'Saran Rekomendasi Paspor': s.saranRekomendasiPaspor || '',
-                ...(s.biovisa && questionConfig.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa - ${questionConfig.biovisa[k] || k}`,v])) : {}),
+                ...(s.biovisa && questionConfig?.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa - ${questionConfig?.biovisa?.[k] || k}`,v])) : {}),
                 'IBV': ibv.toFixed(2),
                 'Saran Biovisa': s.saranBiovisa || '',
-                ...(s.penjemputanKoper && questionConfig.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper - ${questionConfig.penjemputanKoper[k] || k}`,v])) : {}),
+                ...(s.penjemputanKoper && questionConfig?.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper - ${questionConfig?.penjemputanKoper?.[k] || k}`,v])) : {}),
                 'IPK': ipk.toFixed(2),
                 'Saran Penjemputan Koper': s.saranPenjemputanKoper || '',
-                ...(s.mobilisasi && questionConfig.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi - ${questionConfig.mobilisasi[k] || k}`,v])) : {}),
+                ...(s.mobilisasi && questionConfig?.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi - ${questionConfig?.mobilisasi?.[k] || k}`,v])) : {}),
                 'IMH': imh.toFixed(2),
                 'Saran Mobilisasi': s.saranMobilisasi || '',
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
@@ -241,6 +243,31 @@ export default function SurveyEntries() {
 
     if (loading) {
         return <div className="flex h-full justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-4">Memuat data survei...</p></div>;
+    }
+
+    const DetailAnswerSection = ({ title, surveySection, configSection, saran }: { title: string, surveySection: { [key: string]: number } | undefined, configSection: any, saran?: string }) => {
+        if (!surveySection) return null;
+        return (
+            <div className="space-y-2">
+                <h4 className="font-bold text-lg text-primary border-b pb-2">{title}</h4>
+                <div className="space-y-2 pt-2">
+                    {Object.entries(surveySection).map(([key, value]) => (
+                        <div key={key} className="text-sm p-3 bg-secondary/30 rounded-md">
+                            <p className="font-normal text-muted-foreground">{configSection?.[key] || `Pertanyaan ID: ${key}`}</p>
+                            <p className="font-semibold text-lg text-primary">{value} <span className="text-sm font-normal text-muted-foreground">/ 5</span></p>
+                        </div>
+                    ))}
+                </div>
+                {saran !== undefined && (
+                    <div>
+                        <p className="font-medium mt-4">Saran:</p>
+                        <blockquote className="border-l-2 pl-4 italic text-muted-foreground mt-1">
+                            {saran || "Tidak ada saran."}
+                        </blockquote>
+                    </div>
+                )}
+            </div>
+        )
     }
 
     return (
@@ -352,124 +379,54 @@ export default function SurveyEntries() {
                                                                 <span className="sr-only">Lihat Detail</span>
                                                             </Button>
                                                         </DialogTrigger>
-                                                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                                                             <DialogHeader>
                                                                 <DialogTitle>Detail Survei - {survey.nama || 'Anonim'}</DialogTitle>
                                                                 <DialogDescription>
-                                                                    Dikirim pada {survey.createdAt.toDate().toLocaleString('id-ID')}
+                                                                    Dikirim pada {survey.createdAt.toDate().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}
                                                                 </DialogDescription>
                                                             </DialogHeader>
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
-                                                                <div className="md:col-span-2 space-y-6">
-                                                                    <div>
-                                                                        <h4 className="font-bold text-lg mb-2">I. Detail Responden</h4>
-                                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                                                            <p><strong>Nama:</strong> {survey.nama || "Tidak diisi"}</p>
-                                                                            <p><strong>No. HP:</strong> {survey.nomorHp || "Tidak diisi"}</p>
-                                                                            <p><strong>Pekerjaan:</strong> {survey.pekerjaan}</p>
-                                                                            <p><strong>Usia:</strong> {survey.usia}</p>
-                                                                            <p><strong>Jenis Kelamin:</strong> {survey.jenisKelamin}</p>
-                                                                            <p><strong>Pendidikan:</strong> {survey.pendidikan}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                        {survey.informasiHaji && questionConfig?.informasiHaji && (
-                                                                            <div>
-                                                                                <h4 className="font-bold text-lg mb-2">II. Jawaban Informasi Haji</h4>
-                                                                                <ul className="space-y-1 text-sm">
-                                                                                    {Object.entries(survey.informasiHaji).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.informasiHaji[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                                <div>
-                                                                                    <p><strong>Saran:</strong></p>
-                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranInformasiHaji || "Tidak ada saran."}</blockquote>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        {survey.rekomendasiPaspor && questionConfig?.rekomendasiPaspor && (
-                                                                            <div>
-                                                                                <h4 className="font-bold text-lg mb-2">III. Jawaban Rekomendasi Paspor</h4>
-                                                                                <ul className="space-y-1 text-sm">
-                                                                                    {Object.entries(survey.rekomendasiPaspor).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.rekomendasiPaspor[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                                <div>
-                                                                                    <p><strong>Saran:</strong></p>
-                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranRekomendasiPaspor || "Tidak ada saran."}</blockquote>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        {survey.biovisa && questionConfig?.biovisa && (
-                                                                            <div>
-                                                                                <h4 className="font-bold text-lg mb-2">IV. Jawaban Biovisa</h4>
-                                                                                <ul className="space-y-1 text-sm">
-                                                                                    {Object.entries(survey.biovisa).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.biovisa[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                                <div>
-                                                                                    <p><strong>Saran:</strong></p>
-                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranBiovisa || "Tidak ada saran."}</blockquote>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                        {survey.penjemputanKoper && questionConfig?.penjemputanKoper && (
-                                                                            <div>
-                                                                                <h4 className="font-bold text-lg mb-2">V. Jawaban Penjemputan Koper</h4>
-                                                                                <ul className="space-y-1 text-sm">
-                                                                                    {Object.entries(survey.penjemputanKoper).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.penjemputanKoper[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                                <div>
-                                                                                    <p><strong>Saran:</strong></p>
-                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranPenjemputanKoper || "Tidak ada saran."}</blockquote>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                         {survey.mobilisasi && questionConfig?.mobilisasi && (
-                                                                            <div>
-                                                                                <h4 className="font-bold text-lg mb-2">VI. Jawaban Mobilisasi</h4>
-                                                                                <ul className="space-y-1 text-sm">
-                                                                                    {Object.entries(survey.mobilisasi).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.mobilisasi[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                                <div>
-                                                                                    <p><strong>Saran:</strong></p>
-                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranMobilisasi || "Tidak ada saran."}</blockquote>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
+                                                            <div className="space-y-8 py-4">
+                                                                <div className="space-y-2">
+                                                                    <h4 className="font-bold text-lg text-primary border-b pb-2">I. Detail Responden</h4>
+                                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm pt-2">
+                                                                        <p><strong>Nama:</strong> {survey.nama || "Tidak diisi"}</p>
+                                                                        <p><strong>No. HP:</strong> {survey.nomorHp || "Tidak diisi"}</p>
+                                                                        <p><strong>Pekerjaan:</strong> {survey.pekerjaan}</p>
+                                                                        <p><strong>Usia:</strong> {survey.usia}</p>
+                                                                        <p><strong>Jenis Kelamin:</strong> {survey.jenisKelamin}</p>
+                                                                        <p><strong>Pendidikan:</strong> {survey.pendidikan}</p>
                                                                     </div>
                                                                     <div>
-                                                                        <h4 className="font-bold text-lg mb-2">VII. Evaluasi & Verifikasi</h4>
-                                                                        <div className="space-y-2 text-sm">
-                                                                            <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => (questionConfig?.perbaikan as any)?.[p] || p).join(', ')}</p>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <p><strong>Pernyataan mandiri:</strong></p>
-                                                                                {survey.tidakDiarahkan ? (
-                                                                                    <span className="inline-flex items-center gap-1 text-green-700 font-medium">
-                                                                                        <CheckCircle2 className="h-4 w-4" /> Disetujui
-                                                                                    </span>
-                                                                                ) : (
-                                                                                    <span className="inline-flex items-center gap-1 text-destructive font-medium">
-                                                                                        <XCircle className="h-4 w-4" /> Tidak disetujui
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
+                                                                        <h4 className="font-bold text-lg text-primary border-b pb-2 mt-6">Tanda Tangan</h4>
+                                                                        {survey.tandaTangan ? (
+                                                                            <Image src={survey.tandaTangan} alt="Tanda Tangan Responden" width={200} height={100} className="rounded-md border bg-white mt-2" />
+                                                                        ) : <p className="text-sm text-muted-foreground mt-2">Tidak ada tanda tangan.</p>}
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="space-y-4">
-                                                                    <div>
-                                                                        <h4 className="font-bold text-lg mb-2">Tanda Tangan</h4>
-                                                                        {survey.tandaTangan ? (
-                                                                            <Image src={survey.tandaTangan} alt="Tanda Tangan Responden" width={200} height={100} className="rounded-md border bg-white" />
-                                                                        ) : <p className="text-sm text-muted-foreground">Tidak ada tanda tangan.</p>}
+                                                                <DetailAnswerSection title="II. Jawaban Informasi Haji" surveySection={survey.informasiHaji} configSection={questionConfig?.informasiHaji} saran={survey.saranInformasiHaji} />
+                                                                <DetailAnswerSection title="III. Jawaban Rekomendasi Paspor" surveySection={survey.rekomendasiPaspor} configSection={questionConfig?.rekomendasiPaspor} saran={survey.saranRekomendasiPaspor} />
+                                                                <DetailAnswerSection title="IV. Jawaban Biovisa" surveySection={survey.biovisa} configSection={questionConfig?.biovisa} saran={survey.saranBiovisa} />
+                                                                <DetailAnswerSection title="V. Jawaban Penjemputan Koper" surveySection={survey.penjemputanKoper} configSection={questionConfig?.penjemputanKoper} saran={survey.saranPenjemputanKoper} />
+                                                                <DetailAnswerSection title="VI. Jawaban Mobilisasi" surveySection={survey.mobilisasi} configSection={questionConfig?.mobilisasi} saran={survey.saranMobilisasi} />
+
+                                                                <div className="space-y-2">
+                                                                    <h4 className="font-bold text-lg text-primary border-b pb-2">VII. Evaluasi & Verifikasi</h4>
+                                                                    <div className="space-y-2 pt-2 text-sm">
+                                                                        <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => (questionConfig?.perbaikan as any)?.[p] || p).join(', ')}</p>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <p><strong>Pernyataan mandiri:</strong></p>
+                                                                            {survey.tidakDiarahkan ? (
+                                                                                <span className="inline-flex items-center gap-1 text-green-700 font-medium">
+                                                                                    <CheckCircle2 className="h-4 w-4" /> Disetujui
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="inline-flex items-center gap-1 text-destructive font-medium">
+                                                                                    <XCircle className="h-4 w-4" /> Tidak disetujui
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
