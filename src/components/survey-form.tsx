@@ -52,6 +52,39 @@ const KUALITAS_RATINGS = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netr
 const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Tidak Pernah Ada" };
 const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup", 4: "Mudah", 5: "Sangat Mudah" };
 
+const DEFAULT_QUESTIONS = {
+    informasiHaji: {
+        q1: 'Saya memahami urutan tahapan haji dalam negeri (administrasi, manasik, keberangkatan, dll) dengan jelas.',
+        q2: 'Penjelasan mengenai tahapan haji disampaikan secara rinci dan terstruktur.',
+        q3: 'Informasi tahapan haji disampaikan dengan bahasa yang mudah dimengerti.',
+        q4: 'Informasi mengenai tahapan haji mudah diakses melalui berbagai media (cetak, digital, bimbingan).',
+        q5: 'Petugas atau narasumber memberikan informasi yang cukup dan akurat terkait setiap tahapan.',
+        q6: 'Informasi setiap tahapan disampaikan sesuai waktu yang dibutuhkan (tidak terlambat/tidak terlalu dini).',
+        q7: 'Perubahan jadwal atau prosedur disampaikan dengan segera dan jelas.',
+        q8: 'Media penyampaian informasi (aplikasi, media sosial, leaflet, bimbingan manasik) sangat membantu memahami tahapan.',
+        q9: 'Bimbingan manasik efektif dalam menjelaskan setiap tahapan haji yang harus dijalani.',
+        q10: 'Secara keseluruhan, saya puas terhadap penyampaian informasi mengenai tahapan haji dalam negeri.',
+    },
+    penyimpangan: {
+        p1: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.',
+        p2: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.',
+        p3: 'Tidak adanya praktik percaloan dalam pengurusan layanan.',
+        p4: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.',
+        p5: 'Ketersediaan dan kemudahan akses sistem pengaduan.',
+    },
+    perbaikan: {
+        kebijakan: "Kebijakan pelayanan",
+        sdm: "Profesionalisme SDM",
+        sarpras: "Kualitas Sarana dan Prasarana",
+        sistem: "Sistem informasi dan pelayanan publik",
+        konsultasi: "Konsultasi dan pengaduan",
+        pungli: "Penghilangan Praktik pungli",
+        prosedur: "Penghilangan praktik diluar prosedur",
+        calo: "Penghilangan praktik percaloan",
+        tidak_ada: "Tidak ada yang perlu diperbaiki"
+    }
+};
+
 const formSchema = z.object({
   nama: z.string().optional(),
   nomorHp: z.string().optional(),
@@ -116,11 +149,12 @@ export function SurveyForm() {
             if (configDoc.exists()) {
                 setConfig(configDoc.data());
             } else {
-                toast({ variant: "destructive", title: "Konfigurasi survei tidak ditemukan." });
+                setConfig(DEFAULT_QUESTIONS);
             }
         } catch (error) {
             console.error("Error fetching config:", error);
-            toast({ variant: "destructive", title: "Gagal memuat konfigurasi.", description: "Pastikan Aturan Keamanan Firestore sudah benar." });
+            setConfig(DEFAULT_QUESTIONS);
+            toast({ variant: "destructive", title: "Gagal memuat konfigurasi.", description: "Menggunakan pertanyaan default." });
         } finally {
             setIsLoading(false);
         }
@@ -128,10 +162,8 @@ export function SurveyForm() {
     
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
         if (user) {
-            // User is signed in, fetch config.
             fetchConfig();
         } else {
-            // No user is signed in. Attempt to sign in.
             signInAnonymously(auth).catch((error) => {
                 console.error("Error signing in anonymously: ", error);
                 if (error.code === 'auth/operation-not-allowed') {
@@ -147,6 +179,7 @@ export function SurveyForm() {
                       description: "Terjadi kesalahan koneksi. Mohon muat ulang halaman.",
                     });
                 }
+                setIsLoading(false);
             });
         }
     });
@@ -505,5 +538,3 @@ export function SurveyForm() {
     </Form>
   )
 }
-
-    
