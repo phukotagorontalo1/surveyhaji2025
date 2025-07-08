@@ -125,10 +125,10 @@ export function SurveyForm() {
             setIsLoading(false);
         }
     };
-
+    
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
         if (user) {
-            // User is signed in.
+            // User is signed in, fetch config.
             fetchConfig();
         } else {
             // No user is signed in. Attempt to sign in.
@@ -360,6 +360,14 @@ export function SurveyForm() {
                             </div>
                         </div>
                     ))}
+                    <Separator />
+                    <FormField control={form.control} name="saran" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Kolom Saran dan Masukan (Opsional)</FormLabel>
+                            <FormControl><Textarea placeholder="Tuliskan saran, kritik, atau apresiasi Anda di sini..." className="resize-y" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
                 </CardContent>
             </Card>
         )}
@@ -396,7 +404,7 @@ export function SurveyForm() {
         {currentStep === 4 && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline text-2xl">IV. Evaluasi, Saran, dan Verifikasi</CardTitle>
+                    <CardTitle className="font-headline text-2xl">IV. Evaluasi dan Verifikasi</CardTitle>
                     <CardDescription>
                     Masukan Anda sangat berarti untuk perbaikan layanan kami di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong>.
                     Bagian {currentStep} dari {totalSteps}.
@@ -448,14 +456,6 @@ export function SurveyForm() {
                         )}
                         />
                     
-                    <FormField control={form.control} name="saran" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Saran dan Masukan (Opsional)</FormLabel>
-                            <FormControl><Textarea placeholder="Tuliskan saran, kritik, atau apresiasi Anda di sini..." className="resize-y" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-
                     <Separator />
                     
                     <FormField control={form.control} name="tidakDiarahkan" render={({ field }) => (
@@ -505,3 +505,5 @@ export function SurveyForm() {
     </Form>
   )
 }
+
+    
