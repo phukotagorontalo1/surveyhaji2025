@@ -18,7 +18,7 @@ export default function HasilPage() {
         </CardHeader>
         <CardContent className="px-8 pb-8">
           <p className="text-muted-foreground mb-8">
-            Terima kasih telah berpartisipasi dalam Survey Kepuasan Masyarakat Pelayanan Haji dan Rekomendasi Paspor. Masukan Anda sangat berharga bagi kami untuk perbaikan layanan di masa mendatang.
+            Terima kasih telah berpartisipasi dalam Survey Pelayanan Haji. Masukan Anda sangat berharga bagi kami untuk perbaikan layanan di masa mendatang.
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 bg-secondary/50 p-6 rounded-lg">
