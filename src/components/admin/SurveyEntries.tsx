@@ -42,6 +42,60 @@ interface SurveyData {
     tandaTangan: string;
 }
 
+const DEFAULT_QUESTIONS = {
+    informasiHaji: {
+        q1: 'Saya memahami urutan tahapan haji dalam negeri (administrasi, manasik, keberangkatan, dll) dengan jelas.',
+        q2: 'Penjelasan mengenai tahapan haji disampaikan secara rinci dan terstruktur.',
+        q3: 'Informasi tahapan haji disampaikan dengan bahasa yang mudah dimengerti.',
+        q4: 'Informasi mengenai tahapan haji mudah diakses melalui berbagai media (cetak, digital, bimbingan).',
+        q5: 'Petugas atau narasumber memberikan informasi yang cukup dan akurat terkait setiap tahapan.',
+        q6: 'Informasi setiap tahapan disampaikan sesuai waktu yang dibutuhkan (tidak terlambat/tidak terlalu dini).',
+        q7: 'Perubahan jadwal atau prosedur disampaikan dengan segera dan jelas.',
+        q8: 'Media penyampaian informasi (aplikasi, media sosial, leaflet, bimbingan manasik) sangat membantu memahami tahapan.',
+        q9: 'Bimbingan manasik efektif dalam menjelaskan setiap tahapan haji yang harus dijalani.',
+        q10: 'Secara keseluruhan, saya puas terhadap penyampaian informasi mengenai tahapan haji dalam negeri.',
+    },
+    rekomendasiPaspor: {
+        rp1: 'Seberapa puas Anda terhadap kejelasan informasi yang diberikan terkait proses penerbitan rekomendasi paspor?',
+        rp2: 'Seberapa mudah proses pengajuan rekomendasi paspor yang Anda alami?',
+        rp3: 'Seberapa cepat proses penerbitan rekomendasi paspor setelah Anda mengajukan permohonan?',
+        rp4: 'Seberapa puas Anda terhadap sikap dan pelayanan petugas dalam proses penerbitan rekomendasi paspor?',
+        rp5: 'Seberapa efektif komunikasi yang Anda terima terkait status permohonan rekomendasi paspor Anda?',
+        rp6: 'Secara keseluruhan, seberapa puas Anda terhadap layanan penerbitan rekomendasi paspor?',
+    },
+    biovisa: {
+        bv1: 'Seberapa jelas informasi yang Anda terima terkait proses perekaman sidik jari untuk biovisa?',
+        bv2: 'Seberapa mudah proses pendaftaran atau antrean perekaman sidik jari?',
+        bv3: 'Seberapa puas Anda terhadap fasilitas atau kenyamanan tempat perekaman sidik jari?',
+        bv4: 'Seberapa profesional dan ramah petugas yang melayani perekaman sidik jari?',
+        bv5: 'Seberapa puas Anda terhadap komunikasi atau notifikasi jadwal perekaman sidik jari?',
+        bv6: 'Seberapa puas Anda terhadap keseluruhan layanan perekaman sidik jari untuk keperluan biovisa?',
+    },
+    penjemputanKoper: {
+        pk1: 'Seberapa puas Anda terhadap ketepatan waktu penjemputan dan penyerahan koper jemaah?',
+        pk2: 'Seberapa puas Anda terhadap kejelasan informasi mengenai jadwal dan lokasi penjemputan dan penyerahan koper?',
+        pk3: 'Seberapa puas Anda terhadap kemudahan proses penyerahan koper kepada petugas?',
+        pk4: 'Seberapa puas Anda terhadap sikap dan pelayanan petugas saat penjemputan dan penyerahan koper?',
+        pk5: 'Seberapa puas Anda terhadap koordinasi antara petugas dan jemaah dalam proses penjemputan dan penyerahan koper?',
+        pk6: 'Seberapa puas Anda secara keseluruhan terhadap layanan penjemputan dan penyerahan koper?',
+    },
+    mobilisasi: {
+        mh1: "Seberapa puas Anda terhadap kejelasan informasi jadwal keberangkatan dan rute perjalanan?",
+        mh2: "Seberapa puas Anda terhadap jumlah armada yang disediakan sesuai kebutuhan jumlah jemaah?",
+        mh3: "Seberapa puas Anda terhadap keteraturan dan koordinasi saat proses naik-turun kendaraan?",
+        mh4: "Seberapa puas Anda terhadap bantuan petugas selama proses mobilisasi jemaah?",
+        mh5: "Seberapa puas Anda secara keseluruhan terhadap pelayanan mobilisasi dari Masjid Jami' ke Asrama Haji?"
+    },
+    perbaikan: {
+        informasi: "Penyampaian Informasi Tahapan Haji",
+        paspor: "Penerbitan Rekomendasi Paspor",
+        biovisa: "Perekaman Sidik Jari untuk Biovisa",
+        koper: "Pelayanan Penjemputan dan Penyerahan Koper",
+        mobilisasi: "Mobilisasi ke Asrama Haji",
+        tidak_ada: "Tidak ada yang perlu diperbaiki"
+    }
+};
+
 const KUALITAS_RATINGS: { [key: number]: string } = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netral", 4: "Setuju", 5: "Sangat Setuju" };
 const KEPUASAN_RATINGS: { [key: number]: string } = { 1: "Sangat Tidak Puas", 2: "Tidak Puas", 3: "Cukup Puas", 4: "Puas", 5: "Sangat Puas" };
 
@@ -63,9 +117,23 @@ export default function SurveyEntries() {
                 // Fetch Config
                 const configRef = doc(db, "config", "questions");
                 const configSnap = await getDoc(configRef);
+                let effectiveConfig = DEFAULT_QUESTIONS;
                 if (configSnap.exists()) {
-                    setQuestionConfig(configSnap.data());
+                    const dbConfig = configSnap.data();
+                     const perbaikanOptions = (dbConfig.perbaikan && dbConfig.perbaikan.kebijakan)
+                        ? DEFAULT_QUESTIONS.perbaikan
+                        : { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) };
+
+                     effectiveConfig = {
+                        informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
+                        rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
+                        biovisa: { ...DEFAULT_QUESTIONS.biovisa, ...(dbConfig.biovisa || {}) },
+                        penjemputanKoper: { ...DEFAULT_QUESTIONS.penjemputanKoper, ...(dbConfig.penjemputanKoper || {}) },
+                        mobilisasi: { ...DEFAULT_QUESTIONS.mobilisasi, ...(dbConfig.mobilisasi || {}) },
+                        perbaikan: perbaikanOptions,
+                    };
                 }
+                setQuestionConfig(effectiveConfig);
 
                 // Fetch Survey Data
                 const q = query(collection(db, "surveys"), orderBy("createdAt", "desc"));
@@ -199,19 +267,19 @@ export default function SurveyEntries() {
                 'Usia': s.usia,
                 'Jenis Kelamin': s.jenisKelamin,
                 'Pendidikan': s.pendidikan,
-                ...(s.informasiHaji && questionConfig?.informasiHaji ? Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji - ${questionConfig?.informasiHaji?.[k] || k}`,v])) : {}),
+                ...(s.informasiHaji && questionConfig?.informasiHaji ? Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji: ${questionConfig?.informasiHaji?.[k] || k} (Skor)`,v])) : {}),
                 'IIH': iih.toFixed(2),
                  'Saran Informasi Haji': s.saranInformasiHaji || '',
-                ...(s.rekomendasiPaspor && questionConfig?.rekomendasiPaspor ? Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig?.rekomendasiPaspor?.[k] || k}`,v])) : {}),
+                ...(s.rekomendasiPaspor && questionConfig?.rekomendasiPaspor ? Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor: ${questionConfig?.rekomendasiPaspor?.[k] || k} (Skor)`,v])) : {}),
                 'IKP': ikp.toFixed(2),
                 'Saran Rekomendasi Paspor': s.saranRekomendasiPaspor || '',
-                ...(s.biovisa && questionConfig?.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa - ${questionConfig?.biovisa?.[k] || k}`,v])) : {}),
+                ...(s.biovisa && questionConfig?.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa: ${questionConfig?.biovisa?.[k] || k} (Skor)`,v])) : {}),
                 'IBV': ibv.toFixed(2),
                 'Saran Biovisa': s.saranBiovisa || '',
-                ...(s.penjemputanKoper && questionConfig?.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper - ${questionConfig?.penjemputanKoper?.[k] || k}`,v])) : {}),
+                ...(s.penjemputanKoper && questionConfig?.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper: ${questionConfig?.penjemputanKoper?.[k] || k} (Skor)`,v])) : {}),
                 'IPK': ipk.toFixed(2),
                 'Saran Penjemputan Koper': s.saranPenjemputanKoper || '',
-                ...(s.mobilisasi && questionConfig?.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi - ${questionConfig?.mobilisasi?.[k] || k}`,v])) : {}),
+                ...(s.mobilisasi && questionConfig?.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi: ${questionConfig?.mobilisasi?.[k] || k} (Skor)`,v])) : {}),
                 'IMH': imh.toFixed(2),
                 'Saran Mobilisasi': s.saranMobilisasi || '',
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
