@@ -42,6 +42,8 @@ interface SurveyData {
     tandaTangan: string;
 }
 
+const KUALITAS_RATINGS: { [key: number]: string } = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netral", 4: "Setuju", 5: "Sangat Setuju" };
+const KEPUASAN_RATINGS: { [key: number]: string } = { 1: "Sangat Tidak Puas", 2: "Tidak Puas", 3: "Cukup Puas", 4: "Puas", 5: "Sangat Puas" };
 
 export default function SurveyEntries() {
     const [surveys, setSurveys] = useState<SurveyData[]>([]);
@@ -126,7 +128,7 @@ export default function SurveyEntries() {
         if (!questionConfig) return { iih: 0, ikp: 0, ibv: 0, ipk: 0, imh: 0 };
 
         const calculateIndex = (surveySection: { [key: string]: number } | undefined, configSection: { [key: string]: any } | undefined) => {
-            if (!surveySection || !configSection || Object.keys(configSection).length === 0) return 0;
+            if (!surveySection || !configSection || Object.keys(configSection).length === 0 || Object.keys(surveySection).length === 0) return 0;
             const sum = Object.values(surveySection).reduce((a, b) => a + b, 0);
             const count = Object.keys(configSection).length;
             const maxScore = count * 5;
@@ -247,8 +249,8 @@ export default function SurveyEntries() {
         return <div className="flex h-full justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-4">Memuat data survei...</p></div>;
     }
 
-    const DetailAnswerSection = ({ title, surveySection, configSection, saran }: { title: string, surveySection: { [key: string]: number } | undefined, configSection: any, saran?: string }) => {
-        if (!surveySection || !configSection) return null;
+    const DetailAnswerSection = ({ title, surveySection, configSection, saran, ratingLabels }: { title: string, surveySection: { [key: string]: number } | undefined, configSection: any, saran?: string, ratingLabels: { [key: number]: string } }) => {
+        if (!surveySection || !configSection || Object.keys(surveySection).length === 0) return null;
         return (
             <div className="space-y-2">
                 <h4 className="font-bold text-lg text-primary border-b pb-2">{title}</h4>
@@ -256,7 +258,10 @@ export default function SurveyEntries() {
                     {Object.entries(surveySection).map(([key, value]) => (
                         <div key={key} className="text-sm p-3 bg-secondary/30 rounded-md">
                             <p className="font-normal text-muted-foreground">{configSection?.[key] || `Pertanyaan ID: ${key}`}</p>
-                            <p className="font-semibold text-lg text-primary">{value} <span className="text-sm font-normal text-muted-foreground">/ 5</span></p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <p className="font-semibold text-xl text-primary">{value}</p>
+                                <p className="font-medium text-primary/90">{ratingLabels[value] || ''}</p>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -432,11 +437,11 @@ export default function SurveyEntries() {
                                                                     </div>
                                                                 </div>
 
-                                                                <DetailAnswerSection title="II. Jawaban Informasi Haji" surveySection={survey.informasiHaji} configSection={questionConfig?.informasiHaji} saran={survey.saranInformasiHaji} />
-                                                                <DetailAnswerSection title="III. Jawaban Rekomendasi Paspor" surveySection={survey.rekomendasiPaspor} configSection={questionConfig?.rekomendasiPaspor} saran={survey.saranRekomendasiPaspor} />
-                                                                <DetailAnswerSection title="IV. Jawaban Biovisa" surveySection={survey.biovisa} configSection={questionConfig?.biovisa} saran={survey.saranBiovisa} />
-                                                                <DetailAnswerSection title="V. Jawaban Penjemputan Koper" surveySection={survey.penjemputanKoper} configSection={questionConfig?.penjemputanKoper} saran={survey.saranPenjemputanKoper} />
-                                                                <DetailAnswerSection title="VI. Jawaban Mobilisasi" surveySection={survey.mobilisasi} configSection={questionConfig?.mobilisasi} saran={survey.saranMobilisasi} />
+                                                                <DetailAnswerSection title="II. Jawaban Informasi Haji" surveySection={survey.informasiHaji} configSection={questionConfig?.informasiHaji} saran={survey.saranInformasiHaji} ratingLabels={KUALITAS_RATINGS} />
+                                                                <DetailAnswerSection title="III. Jawaban Rekomendasi Paspor" surveySection={survey.rekomendasiPaspor} configSection={questionConfig?.rekomendasiPaspor} saran={survey.saranRekomendasiPaspor} ratingLabels={KEPUASAN_RATINGS} />
+                                                                <DetailAnswerSection title="IV. Jawaban Biovisa" surveySection={survey.biovisa} configSection={questionConfig?.biovisa} saran={survey.saranBiovisa} ratingLabels={KEPUASAN_RATINGS} />
+                                                                <DetailAnswerSection title="V. Jawaban Penjemputan Koper" surveySection={survey.penjemputanKoper} configSection={questionConfig?.penjemputanKoper} saran={survey.saranPenjemputanKoper} ratingLabels={KEPUASAN_RATINGS} />
+                                                                <DetailAnswerSection title="VI. Jawaban Mobilisasi" surveySection={survey.mobilisasi} configSection={questionConfig?.mobilisasi} saran={survey.saranMobilisasi} ratingLabels={KEPUASAN_RATINGS} />
 
                                                                 <div className="space-y-2">
                                                                     <h4 className="font-bold text-lg text-primary border-b pb-2">VII. Evaluasi & Verifikasi</h4>
@@ -501,5 +506,3 @@ export default function SurveyEntries() {
         </div>
     );
 }
-
-    
