@@ -15,19 +15,19 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface SurveyData {
     id: string;
     informasiHaji: { [key: string]: number };
-    penyimpangan: { [key: string]: number };
+    rekomendasiPaspor: { [key: string]: number };
     createdAt: Timestamp;
     [key: string]: any;
 }
 
 interface CalculatedScores {
     iih: number;
-    ipak: number;
+    ikp: number;
 }
 
 export function DashboardDisplay() {
     const [surveys, setSurveys] = useState<SurveyData[]>([]);
-    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ipak: 0 });
+    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ikp: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [questionConfig, setQuestionConfig] = useState<any>(null);
@@ -88,28 +88,31 @@ export function DashboardDisplay() {
 
     const calculateMetrics = (data: SurveyData[], config: any) => {
         let totalIihScore = 0;
-        let totalIpakScore = 0;
-        const informasiQuestionKeys = Object.keys(config.informasiHaji);
-        const penyimpanganQuestionKeys = Object.keys(config.penyimpangan);
+        let totalIkpScore = 0;
+        const informasiQuestionKeys = Object.keys(config.informasiHaji || {});
+        const pasporQuestionKeys = Object.keys(config.rekomendasiPaspor || {});
 
         const informasiTotals: { [key: string]: number } = informasiQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
 
         data.forEach(survey => {
-            const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
-            totalIihScore += (informasiSum / (informasiQuestionKeys.length * 5)) * 100;
-
-            const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
-            totalIpakScore += (penyimpanganSum / (penyimpanganQuestionKeys.length * 5)) * 100;
+            if (survey.informasiHaji) {
+                const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
+                totalIihScore += (informasiSum / (informasiQuestionKeys.length * 5)) * 100;
+            }
+            if (survey.rekomendasiPaspor) {
+                const pasporSum = Object.values(survey.rekomendasiPaspor).reduce((a, b) => a + b, 0);
+                totalIkpScore += (pasporSum / (pasporQuestionKeys.length * 5)) * 100;
+            }
             
             Object.keys(informasiTotals).forEach(key => {
-                informasiTotals[key] += survey.informasiHaji[key] || 0;
+                informasiTotals[key] += survey.informasiHaji?.[key] || 0;
             });
         });
         
         const numSurveys = data.length;
         setScores({
             iih: numSurveys > 0 ? totalIihScore / numSurveys : 0,
-            ipak: numSurveys > 0 ? totalIpakScore / numSurveys : 0,
+            ikp: numSurveys > 0 ? totalIkpScore / numSurveys : 0,
         });
 
         const newChartData = Object.keys(informasiTotals).map(key => ({
@@ -135,11 +138,12 @@ export function DashboardDisplay() {
                 usia: s.usia,
                 jenisKelamin: s.jenisKelamin,
                 pendidikan: s.pendidikan,
-                ...Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`informasiHaji_${k}`,v])),
-                ...Object.fromEntries(Object.entries(s.penyimpangan).map(([k,v]) => [`penyimpangan_${k}`,v])),
+                ...Object.fromEntries(Object.entries(s.informasiHaji || {}).map(([k,v]) => [`informasiHaji_${k}`,v])),
+                ...Object.fromEntries(Object.entries(s.rekomendasiPaspor || {}).map(([k,v]) => [`rekomendasiPaspor_${k}`,v])),
+                saranInformasiHaji: s.saranInformasiHaji || '',
+                saranRekomendasiPaspor: s.saranRekomendasiPaspor || '',
                 tidakDiarahkan: s.tidakDiarahkan,
                 perbaikan: s.perbaikan.join('; '),
-                saran: s.saran || '',
                 createdAt: s.createdAt.toDate().toISOString(),
             };
             return flat;
@@ -226,11 +230,11 @@ export function DashboardDisplay() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Indeks Anti Korupsi (IPAK)</CardTitle>
+                        <CardTitle className="text-sm font-medium">Indeks Kepuasan Paspor (IKP)</CardTitle>
                         <AreaChart className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{scores.ipak.toFixed(2)}</div>
+                        <div className="text-2xl font-bold">{scores.ikp.toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
                     </CardContent>
                 </Card>
@@ -307,3 +311,5 @@ export function DashboardDisplay() {
         </div>
     )
 }
+
+    

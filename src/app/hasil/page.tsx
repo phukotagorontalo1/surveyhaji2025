@@ -1,3 +1,4 @@
+
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ export default function HasilPage() {
         </CardHeader>
         <CardContent className="px-8 pb-8">
           <p className="text-muted-foreground mb-8">
-            Terima kasih telah berpartisipasi dalam Survey Kepuasan Masyarakat dan Persepsi Anti Korupsi Pelayanan Haji. Masukan Anda sangat berharga bagi kami untuk perbaikan layanan di masa mendatang.
+            Terima kasih telah berpartisipasi dalam Survey Kepuasan Masyarakat Pelayanan Haji dan Rekomendasi Paspor. Masukan Anda sangat berharga bagi kami untuk perbaikan layanan di masa mendatang.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary/50 p-6 rounded-lg">
@@ -27,7 +28,7 @@ export default function HasilPage() {
                   <p className="font-bold text-green-600">Sangat Baik</p>
               </div>
               <div className="text-center">
-                  <h3 className="font-bold text-lg text-primary">Indeks Anti Korupsi (IPAK)</h3>
+                  <h3 className="font-bold text-lg text-primary">Indeks Kepuasan Paspor (IKP)</h3>
                   <p className="font-headline text-5xl font-bold text-primary my-2">92.50</p>
                   <p className="font-bold text-green-600">Sangat Baik</p>
               </div>
@@ -45,3 +46,5 @@ export default function HasilPage() {
     </div>
   );
 }
+
+    

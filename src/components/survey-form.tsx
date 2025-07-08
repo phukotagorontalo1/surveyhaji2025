@@ -7,7 +7,8 @@ import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { 
   Check, Loader2, Info, BookOpen, Clock, Languages, Accessibility, Rss, Calendar,
-  Presentation, Star, ShieldCheck, HandCoins, FileX2, UserX, PackageX, ShieldQuestion 
+  Presentation, Star, ShieldCheck, HandCoins, FileX2, UserX, PackageX, ShieldQuestion,
+  Timer, Smile, MessagesSquare, MousePointerClick
 } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
 import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
@@ -48,8 +49,7 @@ const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun"
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
 const KUALITAS_RATINGS = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netral", 4: "Setuju", 5: "Sangat Setuju" };
-const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Tidak Pernah Ada" };
-const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup", 4: "Mudah", 5: "Sangat Mudah" };
+const REKOMENDASI_PASPOR_RATINGS = { 1: "Sangat Tidak Puas", 2: "Tidak Puas", 3: "Cukup Puas", 4: "Puas", 5: "Sangat Puas" };
 
 const DEFAULT_QUESTIONS = {
     informasiHaji: {
@@ -64,12 +64,13 @@ const DEFAULT_QUESTIONS = {
         q9: 'Bimbingan manasik efektif dalam menjelaskan setiap tahapan haji yang harus dijalani.',
         q10: 'Secara keseluruhan, saya puas terhadap penyampaian informasi mengenai tahapan haji dalam negeri.',
     },
-    penyimpangan: {
-        p1: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.',
-        p2: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.',
-        p3: 'Tidak adanya praktik percaloan dalam pengurusan layanan.',
-        p4: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.',
-        p5: 'Ketersediaan dan kemudahan akses sistem pengaduan.',
+    rekomendasiPaspor: {
+        rp1: 'Seberapa puas Anda terhadap kejelasan informasi yang diberikan terkait proses penerbitan rekomendasi paspor?',
+        rp2: 'Seberapa mudah proses pengajuan rekomendasi paspor yang Anda alami?',
+        rp3: 'Seberapa cepat proses penerbitan rekomendasi paspor setelah Anda mengajukan permohonan?',
+        rp4: 'Seberapa puas Anda terhadap sikap dan pelayanan petugas dalam proses penerbitan rekomendasi paspor?',
+        rp5: 'Seberapa efektif komunikasi yang Anda terima terkait status permohonan rekomendasi paspor Anda?',
+        rp6: 'Secara keseluruhan, seberapa puas Anda terhadap layanan penerbitan rekomendasi paspor?',
     },
     perbaikan: {
         kebijakan: "Kebijakan pelayanan",
@@ -96,15 +97,16 @@ const formSchema = z.object({
     q5: z.number().min(1, "Penilaian wajib diisi").max(5), q6: z.number().min(1, "Penilaian wajib diisi").max(5), q7: z.number().min(1, "Penilaian wajib diisi").max(5), q8: z.number().min(1, "Penilaian wajib diisi").max(5),
     q9: z.number().min(1, "Penilaian wajib diisi").max(5), q10: z.number().min(1, "Penilaian wajib diisi").max(5),
   }),
-  penyimpangan: z.object({
-    p1: z.number().min(1, "Penilaian wajib diisi").max(5), p2: z.number().min(1, "Penilaian wajib diisi").max(5), p3: z.number().min(1, "Penilaian wajib diisi").max(5),
-    p4: z.number().min(1, "Penilaian wajib diisi").max(5), p5: z.number().min(1, "Penilaian wajib diisi").max(5),
+  saranInformasiHaji: z.string().optional(),
+  rekomendasiPaspor: z.object({
+    rp1: z.number().min(1, "Penilaian wajib diisi").max(5), rp2: z.number().min(1, "Penilaian wajib diisi").max(5), rp3: z.number().min(1, "Penilaian wajib diisi").max(5),
+    rp4: z.number().min(1, "Penilaian wajib diisi").max(5), rp5: z.number().min(1, "Penilaian wajib diisi").max(5), rp6: z.number().min(1, "Penilaian wajib diisi").max(5),
   }),
+  saranRekomendasiPaspor: z.string().optional(),
   tidakDiarahkan: z.boolean().refine(val => val === true, { message: "Anda harus menyetujui pernyataan ini." }),
   perbaikan: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Anda harus memilih setidaknya satu opsi.",
   }),
-  saran: z.string().optional(),
   tandaTangan: z.string().min(1, { message: "Tanda tangan digital diperlukan." }),
 });
 
@@ -115,14 +117,14 @@ export function SurveyForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [config, setConfig] = useState<any>(DEFAULT_QUESTIONS);
+  const [config, setConfig] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
   const questionIcons: { [key: string]: React.ElementType } = {
       q1: Info, q2: BookOpen, q3: Languages, q4: Accessibility, q5: Rss,
       q6: Clock, q7: Calendar, q8: Presentation, q9: Presentation, q10: Star,
-      p1: HandCoins, p2: FileX2, p3: UserX, p4: PackageX, p5: ShieldQuestion,
+      rp1: Info, rp2: MousePointerClick, rp3: Timer, rp4: Smile, rp5: MessagesSquare, rp6: Star,
   };
   
   const form = useForm<FormSchemaType>({
@@ -132,13 +134,16 @@ export function SurveyForm() {
       nomorHp: "",
       jenisKelamin: undefined,
       informasiHaji: { q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0, q9: 0, q10: 0 },
-      penyimpangan: { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 },
+      saranInformasiHaji: "",
+      rekomendasiPaspor: { rp1: 0, rp2: 0, rp3: 0, rp4: 0, rp5: 0, rp6: 0 },
+      saranRekomendasiPaspor: "",
       tidakDiarahkan: false,
       perbaikan: [],
-      saran: "",
       tandaTangan: "",
     },
   });
+  
+  const activeConfig = config || DEFAULT_QUESTIONS;
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -150,7 +155,7 @@ export function SurveyForm() {
                 // Deep merge with defaults to prevent partial data issues
                 const mergedConfig = {
                     informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
-                    penyimpangan: { ...DEFAULT_QUESTIONS.penyimpangan, ...(dbConfig.penyimpangan || {}) },
+                    rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
                     perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
                 };
                 setConfig(mergedConfig);
@@ -166,7 +171,7 @@ export function SurveyForm() {
         }
     };
     
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+    onAuthStateChanged(auth, (user: User | null) => {
         if (user) {
             fetchConfig();
         } else {
@@ -189,13 +194,10 @@ export function SurveyForm() {
             });
         }
     });
-
-    return () => unsubscribe();
   }, [toast]);
-  
-  const activeConfig = config;
 
   const informasiHajiQuestions = useMemo(() => {
+    if (!activeConfig?.informasiHaji) return {};
     return {
         "A. Kejelasan Informasi Tahapan Haji": [
             { id: 'q1', label: activeConfig.informasiHaji.q1, ratings: KUALITAS_RATINGS },
@@ -220,15 +222,17 @@ export function SurveyForm() {
     };
   }, [activeConfig]);
 
-  const penyimpanganQuestions = useMemo(() => {
-      return Object.entries(activeConfig.penyimpangan).map(([id, label]) => ({ 
+  const rekomendasiPasporQuestions = useMemo(() => {
+      if (!activeConfig?.rekomendasiPaspor) return [];
+      return Object.entries(activeConfig.rekomendasiPaspor).map(([id, label]) => ({ 
           id, 
           label: label as string, 
-          ratings: id === 'p5' ? KETERSEDIAAN_RATINGS : PENYIMPANGAN_RATINGS 
+          ratings: REKOMENDASI_PASPOR_RATINGS
       }));
   }, [activeConfig]);
 
   const perbaikanItems = useMemo(() => {
+    if (!activeConfig?.perbaikan) return [];
     const allItems = Object.entries(activeConfig.perbaikan).map(([id, label]) => ({ id, label: label as string }));
     const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
     const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
@@ -240,7 +244,7 @@ export function SurveyForm() {
     switch(currentStep) {
         case 1: fieldsToValidate = ['pekerjaan', 'usia', 'jenisKelamin', 'pendidikan']; break;
         case 2: fieldsToValidate = Object.keys(form.getValues().informasiHaji).map(k => `informasiHaji.${k}` as FieldPath<FormSchemaType>); break;
-        case 3: fieldsToValidate = Object.keys(form.getValues().penyimpangan).map(k => `penyimpangan.${k}` as FieldPath<FormSchemaType>); break;
+        case 3: fieldsToValidate = Object.keys(form.getValues().rekomendasiPaspor).map(k => `rekomendasiPaspor.${k}` as FieldPath<FormSchemaType>); break;
     }
     
     const isValid = await form.trigger(fieldsToValidate);
@@ -380,7 +384,7 @@ export function SurveyForm() {
                         <div key={sectionTitle}>
                             <h3 className="font-semibold text-primary mb-4">{sectionTitle}</h3>
                             <div className="space-y-6">
-                            {(questions as any[]).map((q, index) => {
+                            {(questions as any[]).map((q) => {
                                 const Icon = questionIcons[q.id];
                                 return (
                                 <FormField key={q.id} control={form.control} name={`informasiHaji.${q.id as 'q1'}`} render={({ field }) => (
@@ -399,10 +403,10 @@ export function SurveyForm() {
                         </div>
                     ))}
                     <Separator />
-                    <FormField control={form.control} name="saran" render={({ field }) => (
+                    <FormField control={form.control} name="saranInformasiHaji" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Kolom Saran dan Masukan (Opsional)</FormLabel>
-                            <FormControl><Textarea placeholder="Tuliskan saran, kritik, atau apresiasi Anda di sini..." className="resize-y" {...field} /></FormControl>
+                            <FormControl><Textarea placeholder="Tuliskan saran, kritik, atau apresiasi Anda terkait penyampaian informasi haji di sini..." className="resize-y" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -413,17 +417,28 @@ export function SurveyForm() {
         {currentStep === 3 && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline text-2xl">III. Perilaku Penyimpangan Pelayanan</CardTitle>
+                    <CardTitle className="font-headline text-2xl">III. Penerbitan Rekomendasi Paspor</CardTitle>
                     <CardDescription>
-                    Berikan penilaian Anda mengenai ada atau tidaknya perilaku penyimpangan dalam pelayanan haji di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong> yang Anda alami.
+                    Beri penilaian terhadap setiap pernyataan berikut sesuai dengan pengalaman Anda di <strong className="font-semibold text-foreground/90">Tingkat Kemenag Kota Gorontalo</strong>.
                     Bagian {currentStep} dari {totalSteps}.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {penyimpanganQuestions.map((q: any, index: number) => {
+                     <div className="text-sm text-muted-foreground bg-secondary/50 p-4 rounded-md space-y-2">
+                        <p className="font-semibold text-foreground">Petunjuk:</p>
+                        <p>Gunakan skala berikut:</p>
+                        <ul className="list-decimal list-inside columns-2 sm:columns-3 md:columns-5 text-sm">
+                            <li>Sangat Tidak Puas</li>
+                            <li>Tidak Puas</li>
+                            <li>Cukup Puas</li>
+                            <li>Puas</li>
+                            <li>Sangat Puas</li>
+                        </ul>
+                    </div>
+                    {rekomendasiPasporQuestions.map((q: any) => {
                     const Icon = questionIcons[q.id];
                     return (
-                        <FormField key={q.id} control={form.control} name={`penyimpangan.${q.id as 'p1'}`} render={({ field }) => (
+                        <FormField key={q.id} control={form.control} name={`rekomendasiPaspor.${q.id as 'rp1'}`} render={({ field }) => (
                         <FormItem>
                             <FormLabel className="flex items-start gap-3">
                             {Icon && <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />}
@@ -435,6 +450,14 @@ export function SurveyForm() {
                         )} />
                     )
                     })}
+                     <Separator />
+                    <FormField control={form.control} name="saranRekomendasiPaspor" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Saran atau masukan untuk perbaikan layanan penerbitan rekomendasi paspor (Opsional)</FormLabel>
+                            <FormControl><Textarea placeholder="Tuliskan saran Anda di sini..." className="resize-y" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
                 </CardContent>
             </Card>
         )}
@@ -543,3 +566,5 @@ export function SurveyForm() {
     </Form>
   )
 }
+
+    

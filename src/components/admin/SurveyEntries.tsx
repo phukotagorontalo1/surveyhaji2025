@@ -21,7 +21,7 @@ import { PaginationControls } from "./PaginationControls"
 interface SurveyData {
     id: string;
     informasiHaji: { [key: string]: number };
-    penyimpangan: { [key: string]: number };
+    rekomendasiPaspor: { [key: string]: number };
     createdAt: Timestamp;
     nama?: string;
     nomorHp?: string;
@@ -31,7 +31,8 @@ interface SurveyData {
     pendidikan: string;
     tidakDiarahkan: boolean;
     perbaikan: string[];
-    saran?: string;
+    saranInformasiHaji?: string;
+    saranRekomendasiPaspor?: string;
     tandaTangan: string;
 }
 
@@ -116,14 +117,14 @@ export default function SurveyEntries() {
     };
 
     const calculateScores = (survey: SurveyData) => {
-        if (!questionConfig) return { iih: 0, ipak: 0 };
+        if (!questionConfig || !survey.informasiHaji || !survey.rekomendasiPaspor) return { iih: 0, ikp: 0 };
         const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
         const iih = (informasiSum / (Object.keys(questionConfig.informasiHaji).length * 5)) * 100;
 
-        const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
-        const ipak = (penyimpanganSum / (Object.keys(questionConfig.penyimpangan).length * 5)) * 100;
+        const pasporSum = Object.values(survey.rekomendasiPaspor).reduce((a, b) => a + b, 0);
+        const ikp = (pasporSum / (Object.keys(questionConfig.rekomendasiPaspor).length * 5)) * 100;
         
-        return { iih, ipak };
+        return { iih, ikp };
     };
 
     const sortedAndFilteredSurveys = useMemo(() => {
@@ -135,9 +136,9 @@ export default function SurveyEntries() {
 
         filtered.sort((a, b) => {
             let valA, valB;
-            if (sortConfig.key === 'iih' || sortConfig.key === 'ipak') {
-                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ipak'];
-                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ipak'];
+            if (sortConfig.key === 'iih' || sortConfig.key === 'ikp') {
+                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ikp'];
+                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ikp'];
             } else if (sortConfig.key === 'nama') {
                 valA = a.nama?.toLowerCase() || 'zzz';
                 valB = b.nama?.toLowerCase() || 'zzz';
@@ -168,7 +169,7 @@ export default function SurveyEntries() {
         }
 
         const flattenedData = sortedAndFilteredSurveys.map(s => {
-            const { iih, ipak } = calculateScores(s);
+            const { iih, ikp } = calculateScores(s);
             const flat: {[key: string]: any} = {
                 id: s.id,
                 'Tanggal Input': s.createdAt.toDate().toISOString(),
@@ -180,11 +181,12 @@ export default function SurveyEntries() {
                 'Pendidikan': s.pendidikan,
                 ...Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji - ${questionConfig.informasiHaji[k]}`,v])),
                 'IIH': iih.toFixed(2),
-                ...Object.fromEntries(Object.entries(s.penyimpangan).map(([k,v]) => [`Penyimpangan - ${questionConfig.penyimpangan[k]}`,v])),
-                'IPAK': ipak.toFixed(2),
+                 'Saran Informasi Haji': s.saranInformasiHaji || '',
+                ...Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig.rekomendasiPaspor[k]}`,v])),
+                'IKP': ikp.toFixed(2),
+                'Saran Rekomendasi Paspor': s.saranRekomendasiPaspor || '',
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
                 'Area Perbaikan': s.perbaikan.map(p => questionConfig.perbaikan[p] || p).join('; '),
-                'Saran': s.saran || '',
             };
             return flat;
         });
@@ -264,8 +266,8 @@ export default function SurveyEntries() {
                                     <SelectItem value="createdAt-asc">Terlama</SelectItem>
                                     <SelectItem value="iih-desc">IIH Tertinggi</SelectItem>
                                     <SelectItem value="iih-asc">IIH Terendah</SelectItem>
-                                    <SelectItem value="ipak-desc">IPAK Tertinggi</SelectItem>
-                                    <SelectItem value="ipak-asc">IPAK Terendah</SelectItem>
+                                    <SelectItem value="ikp-desc">IKP Tertinggi</SelectItem>
+                                    <SelectItem value="ikp-asc">IKP Terendah</SelectItem>
                                     <SelectItem value="nama-asc">Nama (A-Z)</SelectItem>
                                     <SelectItem value="nama-desc">Nama (Z-A)</SelectItem>
                                 </SelectContent>
@@ -290,13 +292,13 @@ export default function SurveyEntries() {
                                         <TableHead>Responden</TableHead>
                                         <TableHead>Tanggal</TableHead>
                                         <TableHead>IIH</TableHead>
-                                        <TableHead>IPAK</TableHead>
+                                        <TableHead>IKP</TableHead>
                                         <TableHead className="text-right">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {paginatedSurveys.map(survey => {
-                                        const { iih, ipak } = calculateScores(survey);
+                                        const { iih, ikp } = calculateScores(survey);
                                         return (
                                         <TableRow key={survey.id}>
                                             <TableCell>
@@ -305,7 +307,7 @@ export default function SurveyEntries() {
                                             </TableCell>
                                             <TableCell>{survey.createdAt.toDate().toLocaleString('id-ID')}</TableCell>
                                             <TableCell>{iih.toFixed(2)}</TableCell>
-                                            <TableCell>{ipak.toFixed(2)}</TableCell>
+                                            <TableCell>{ikp.toFixed(2)}</TableCell>
                                             <TableCell>
                                                 <div className="flex justify-end gap-2">
                                                     <Dialog>
@@ -343,24 +345,28 @@ export default function SurveyEntries() {
                                                                                     <li key={key} className="flex justify-between"><span>{questionConfig.informasiHaji[key]}:</span> <strong>{value}/5</strong></li>
                                                                                 ))}
                                                                             </ul>
+                                                                            <div>
+                                                                                <p><strong>Saran:</strong></p>
+                                                                                <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranInformasiHaji || "Tidak ada saran."}</blockquote>
+                                                                            </div>
                                                                         </div>
                                                                         <div>
-                                                                            <h4 className="font-bold text-lg mb-2">III. Jawaban Penyimpangan</h4>
+                                                                            <h4 className="font-bold text-lg mb-2">III. Jawaban Rekomendasi Paspor</h4>
                                                                             <ul className="space-y-1 text-sm">
-                                                                                {Object.entries(survey.penyimpangan).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.penyimpangan[key]}:</span> <strong>{value}/5</strong></li>
+                                                                                {Object.entries(survey.rekomendasiPaspor).map(([key, value]) => (
+                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.rekomendasiPaspor[key]}:</span> <strong>{value}/5</strong></li>
                                                                                 ))}
                                                                             </ul>
+                                                                            <div>
+                                                                                <p><strong>Saran:</strong></p>
+                                                                                <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranRekomendasiPaspor || "Tidak ada saran."}</blockquote>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                     <div>
                                                                         <h4 className="font-bold text-lg mb-2">IV. Evaluasi & Verifikasi</h4>
                                                                         <div className="space-y-2 text-sm">
                                                                             <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => questionConfig.perbaikan[p] || p).join(', ')}</p>
-                                                                            <div>
-                                                                                <p><strong>Saran:</strong></p>
-                                                                                <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saran || "Tidak ada saran."}</blockquote>
-                                                                            </div>
                                                                             <div className="flex items-center gap-2">
                                                                                 <p><strong>Pernyataan mandiri:</strong></p>
                                                                                 {survey.tidakDiarahkan ? (

@@ -26,12 +26,13 @@ const DEFAULT_QUESTIONS = {
         q9: 'Bimbingan manasik efektif dalam menjelaskan setiap tahapan haji yang harus dijalani.',
         q10: 'Secara keseluruhan, saya puas terhadap penyampaian informasi mengenai tahapan haji dalam negeri.',
     },
-    penyimpangan: {
-        p1: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.',
-        p2: 'Tidak adanya praktik di luar prosedur resmi yang merugikan.',
-        p3: 'Tidak adanya praktik percaloan dalam pengurusan layanan.',
-        p4: 'Tidak adanya gratifikasi atau pemberian imbalan kepada petugas.',
-        p5: 'Ketersediaan dan kemudahan akses sistem pengaduan.',
+    rekomendasiPaspor: {
+        rp1: 'Seberapa puas Anda terhadap kejelasan informasi yang diberikan terkait proses penerbitan rekomendasi paspor?',
+        rp2: 'Seberapa mudah proses pengajuan rekomendasi paspor yang Anda alami?',
+        rp3: 'Seberapa cepat proses penerbitan rekomendasi paspor setelah Anda mengajukan permohonan?',
+        rp4: 'Seberapa puas Anda terhadap sikap dan pelayanan petugas dalam proses penerbitan rekomendasi paspor?',
+        rp5: 'Seberapa efektif komunikasi yang Anda terima terkait status permohonan rekomendasi paspor Anda?',
+        rp6: 'Secara keseluruhan, seberapa puas Anda terhadap layanan penerbitan rekomendasi paspor?',
     },
     perbaikan: {
         kebijakan: "Kebijakan pelayanan",
@@ -57,8 +58,8 @@ const questionStructure = {
             "E. Kepuasan Umum": ['q10'],
         }
     },
-    penyimpangan: {
-        title: "III. Penyimpangan Pelayanan"
+    rekomendasiPaspor: {
+        title: "III. Penerbitan Rekomendasi Paspor"
     },
     perbaikan: {
         title: "IV. Opsi Perbaikan"
@@ -82,7 +83,13 @@ export default function QuestionManagement() {
                     await setDoc(configRef, DEFAULT_QUESTIONS);
                     setQuestionConfig(DEFAULT_QUESTIONS);
                 } else {
-                    setQuestionConfig(configSnap.data());
+                    const dbConfig = configSnap.data();
+                     const mergedConfig = {
+                        informasiHaji: { ...DEFAULT_QUESTIONS.informasiHaji, ...(dbConfig.informasiHaji || {}) },
+                        rekomendasiPaspor: { ...DEFAULT_QUESTIONS.rekomendasiPaspor, ...(dbConfig.rekomendasiPaspor || {}) },
+                        perbaikan: { ...DEFAULT_QUESTIONS.perbaikan, ...(dbConfig.perbaikan || {}) },
+                    };
+                    setQuestionConfig(mergedConfig);
                 }
             } catch (err: any) {
                 console.error("Error fetching config: ", err);
@@ -91,6 +98,7 @@ export default function QuestionManagement() {
                 } else {
                     toast({ variant: "destructive", title: "Gagal memuat konfigurasi." });
                 }
+                 setQuestionConfig(DEFAULT_QUESTIONS);
             } finally {
                 setLoading(false);
             }
@@ -173,11 +181,11 @@ export default function QuestionManagement() {
                         ))}
                     </div>
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">{questionStructure.penyimpangan.title}</h3>
-                        {Object.keys(questionConfig.penyimpangan).map(key => (
+                        <h3 className="font-semibold text-lg text-primary">{questionStructure.rekomendasiPaspor.title}</h3>
+                        {Object.keys(questionConfig.rekomendasiPaspor).map(key => (
                             <div key={key}>
-                                <Label htmlFor={`penyimpangan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
-                                <Textarea id={`penyimpangan-${key}`} value={questionConfig.penyimpangan[key]} onChange={(e) => handleConfigChange('penyimpangan', key, e.target.value)} className="mt-1"/>
+                                <Label htmlFor={`rekomendasiPaspor-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                <Textarea id={`rekomendasiPaspor-${key}`} value={questionConfig.rekomendasiPaspor[key]} onChange={(e) => handleConfigChange('rekomendasiPaspor', key, e.target.value)} className="mt-1"/>
                             </div>
                         ))}
                         <h3 className="font-semibold text-lg text-primary mt-8">{questionStructure.perbaikan.title}</h3>
@@ -193,3 +201,5 @@ export default function QuestionManagement() {
         </div>
     )
 }
+
+    
