@@ -14,20 +14,20 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface SurveyData {
     id: string;
-    kualitas: { [key: string]: number };
+    informasiHaji: { [key: string]: number };
     penyimpangan: { [key: string]: number };
     createdAt: Timestamp;
     [key: string]: any;
 }
 
 interface CalculatedScores {
-    ikm: number;
+    iih: number;
     ipak: number;
 }
 
 export function DashboardDisplay() {
     const [surveys, setSurveys] = useState<SurveyData[]>([]);
-    const [scores, setScores] = useState<CalculatedScores>({ ikm: 0, ipak: 0 });
+    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ipak: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [questionConfig, setQuestionConfig] = useState<any>(null);
@@ -87,34 +87,35 @@ export function DashboardDisplay() {
     }, [toast]);
 
     const calculateMetrics = (data: SurveyData[], config: any) => {
-        let totalIkmScore = 0;
+        let totalIihScore = 0;
         let totalIpakScore = 0;
-        const kualitasQuestionKeys = Object.keys(config.kualitas);
+        const informasiQuestionKeys = Object.keys(config.informasiHaji);
         const penyimpanganQuestionKeys = Object.keys(config.penyimpangan);
 
-        const kualitasTotals: { [key: string]: number } = kualitasQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
+        const informasiTotals: { [key: string]: number } = informasiQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
 
         data.forEach(survey => {
-            const kualitasSum = Object.values(survey.kualitas).reduce((a, b) => a + b, 0);
-            totalIkmScore += (kualitasSum / (kualitasQuestionKeys.length * 5)) * 100;
+            const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
+            totalIihScore += (informasiSum / (informasiQuestionKeys.length * 5)) * 100;
 
             const penyimpanganSum = Object.values(survey.penyimpangan).reduce((a, b) => a + b, 0);
             totalIpakScore += (penyimpanganSum / (penyimpanganQuestionKeys.length * 5)) * 100;
             
-            Object.keys(kualitasTotals).forEach(key => {
-                kualitasTotals[key] += survey.kualitas[key] || 0;
+            Object.keys(informasiTotals).forEach(key => {
+                informasiTotals[key] += survey.informasiHaji[key] || 0;
             });
         });
         
         const numSurveys = data.length;
         setScores({
-            ikm: numSurveys > 0 ? totalIkmScore / numSurveys : 0,
+            iih: numSurveys > 0 ? totalIihScore / numSurveys : 0,
             ipak: numSurveys > 0 ? totalIpakScore / numSurveys : 0,
         });
 
-        const newChartData = Object.keys(kualitasTotals).map(key => ({
-            name: config.kualitas[key],
-            "Rata-rata Skor": numSurveys > 0 ? kualitasTotals[key] / numSurveys : 0,
+        const newChartData = Object.keys(informasiTotals).map(key => ({
+            name: `Q${key.substring(1)}`, // Shorten name for chart, e.g., "Q1", "Q2"
+            fullName: config.informasiHaji[key],
+            "Rata-rata Skor": numSurveys > 0 ? informasiTotals[key] / numSurveys : 0,
         }));
         setChartData(newChartData);
     };
@@ -134,7 +135,7 @@ export function DashboardDisplay() {
                 usia: s.usia,
                 jenisKelamin: s.jenisKelamin,
                 pendidikan: s.pendidikan,
-                ...Object.fromEntries(Object.entries(s.kualitas).map(([k,v]) => [`kualitas_${k}`,v])),
+                ...Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`informasiHaji_${k}`,v])),
                 ...Object.fromEntries(Object.entries(s.penyimpangan).map(([k,v]) => [`penyimpangan_${k}`,v])),
                 tidakDiarahkan: s.tidakDiarahkan,
                 perbaikan: s.perbaikan.join('; '),
@@ -167,6 +168,20 @@ export function DashboardDisplay() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+    
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="p-2 bg-background border rounded-md shadow-lg">
+                    <p className="font-bold">{data.name}</p>
+                    <p className="text-sm text-muted-foreground">{data.fullName}</p>
+                    <p className="text-primary mt-2">Rata-rata: {payload[0].value.toFixed(2)}</p>
+                </div>
+            );
+        }
+        return null;
     };
 
     if (loading) {
@@ -201,11 +216,11 @@ export function DashboardDisplay() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Indeks Kepuasan (IKM)</CardTitle>
+                        <CardTitle className="text-sm font-medium">Indeks Informasi Haji (IIH)</CardTitle>
                         <AreaChart className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{scores.ikm.toFixed(2)}</div>
+                        <div className="text-2xl font-bold">{scores.iih.toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
                     </CardContent>
                 </Card>
@@ -233,24 +248,17 @@ export function DashboardDisplay() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Grafik Kualitas Pelayanan</CardTitle>
-                    <CardDescription>Rata-rata skor untuk setiap aspek kualitas pelayanan (skala 1-5).</CardDescription>
+                    <CardTitle>Grafik Informasi Tahapan Haji</CardTitle>
+                    <CardDescription>Rata-rata skor untuk setiap aspek informasi (skala 1-5).</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} interval={0} style={{ fontSize: '12px' }} />
+                                <XAxis dataKey="name" interval={0} style={{ fontSize: '12px' }} />
                                 <YAxis domain={[0, 5]} />
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: 'hsl(var(--background))', 
-                                        borderColor: 'hsl(var(--border))' 
-                                    }}
-                                    cursor={{fill: 'hsl(var(--muted))'}}
-                                />
-                                <Legend />
+                                <Tooltip content={<CustomTooltip />} cursor={{fill: 'hsl(var(--muted))'}} />
                                 <Bar dataKey="Rata-rata Skor" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -299,5 +307,3 @@ export function DashboardDisplay() {
         </div>
     )
 }
-
-    

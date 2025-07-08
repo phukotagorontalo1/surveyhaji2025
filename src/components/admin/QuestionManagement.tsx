@@ -14,15 +14,17 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2, Save } from "lucide-react"
 
 const DEFAULT_QUESTIONS = {
-    kualitas: {
-        q1: 'Persyaratan pelayanan yang mudah dipahami.',
-        q2: 'Prosedur pelayanan yang tidak berbelit-belit.',
-        q3: 'Waktu penyelesaian pelayanan yang cepat dan tepat.',
-        q4: 'Kewajaran biaya/tarif dalam pelayanan.',
-        q5: 'Kualitas hasil pelayanan yang diberikan.',
-        q6: 'Kompetensi dan profesionalisme petugas pelayanan.',
-        q7: 'Sikap petugas pelayanan yang ramah dan sopan.',
-        q8: 'Kualitas sarana dan prasarana pendukung pelayanan.',
+    informasiHaji: {
+        q1: 'Saya memahami urutan tahapan haji dalam negeri (administrasi, manasik, keberangkatan, dll) dengan jelas.',
+        q2: 'Penjelasan mengenai tahapan haji disampaikan secara rinci dan terstruktur.',
+        q3: 'Informasi tahapan haji disampaikan dengan bahasa yang mudah dimengerti.',
+        q4: 'Informasi mengenai tahapan haji mudah diakses melalui berbagai media (cetak, digital, bimbingan).',
+        q5: 'Petugas atau narasumber memberikan informasi yang cukup dan akurat terkait setiap tahapan.',
+        q6: 'Informasi setiap tahapan disampaikan sesuai waktu yang dibutuhkan (tidak terlambat/tidak terlalu dini).',
+        q7: 'Perubahan jadwal atau prosedur disampaikan dengan segera dan jelas.',
+        q8: 'Media penyampaian informasi (aplikasi, media sosial, leaflet, bimbingan manasik) sangat membantu memahami tahapan.',
+        q9: 'Bimbingan manasik efektif dalam menjelaskan setiap tahapan haji yang harus dijalani.',
+        q10: 'Secara keseluruhan, saya puas terhadap penyampaian informasi mengenai tahapan haji dalam negeri.',
     },
     penyimpangan: {
         p1: 'Tidak adanya praktik pungutan liar (pungli) dalam pelayanan.',
@@ -43,6 +45,26 @@ const DEFAULT_QUESTIONS = {
         tidak_ada: "Tidak ada yang perlu diperbaiki"
     }
 };
+
+const questionStructure = {
+    informasiHaji: {
+        title: "II. Penyampaian Informasi Tahapan Haji dalam Negeri",
+        sections: {
+            "A. Kejelasan Informasi Tahapan Haji": ['q1', 'q2', 'q3'],
+            "B. Ketersediaan dan Akses Informasi": ['q4', 'q5'],
+            "C. Waktu Penyampaian Informasi": ['q6', 'q7'],
+            "D. Efektivitas Media dan Bimbingan": ['q8', 'q9'],
+            "E. Kepuasan Umum": ['q10'],
+        }
+    },
+    penyimpangan: {
+        title: "III. Penyimpangan Pelayanan"
+    },
+    perbaikan: {
+        title: "IV. Opsi Perbaikan"
+    }
+}
+
 
 export default function QuestionManagement() {
     const [questionConfig, setQuestionConfig] = useState<any>(null);
@@ -116,6 +138,7 @@ export default function QuestionManagement() {
         )
     }
     
+    if (!questionConfig) return null;
 
     return (
         <div className="space-y-6">
@@ -136,23 +159,28 @@ export default function QuestionManagement() {
             <Card>
                 <CardContent className="grid md:grid-cols-2 gap-8 pt-6">
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">II. Kualitas Pelayanan</h3>
-                        {Object.keys(questionConfig.kualitas).map(key => (
-                            <div key={key}>
-                                <Label htmlFor={`kualitas-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
-                                <Textarea id={`kualitas-${key}`} value={questionConfig.kualitas[key]} onChange={(e) => handleConfigChange('kualitas', key, e.target.value)} className="mt-1"/>
+                        <h3 className="font-semibold text-lg text-primary">{questionStructure.informasiHaji.title}</h3>
+                        {Object.entries(questionStructure.informasiHaji.sections).map(([sectionTitle, keys]) => (
+                            <div key={sectionTitle} className="space-y-2 pt-2">
+                                <h4 className="font-medium text-md">{sectionTitle}</h4>
+                                {keys.map(key => (
+                                    <div key={key}>
+                                        <Label htmlFor={`informasiHaji-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
+                                        <Textarea id={`informasiHaji-${key}`} value={questionConfig.informasiHaji[key]} onChange={(e) => handleConfigChange('informasiHaji', key, e.target.value)} className="mt-1"/>
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </div>
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">III. Penyimpangan Pelayanan</h3>
+                        <h3 className="font-semibold text-lg text-primary">{questionStructure.penyimpangan.title}</h3>
                         {Object.keys(questionConfig.penyimpangan).map(key => (
                             <div key={key}>
                                 <Label htmlFor={`penyimpangan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>
                                 <Textarea id={`penyimpangan-${key}`} value={questionConfig.penyimpangan[key]} onChange={(e) => handleConfigChange('penyimpangan', key, e.target.value)} className="mt-1"/>
                             </div>
                         ))}
-                        <h3 className="font-semibold text-lg text-primary mt-8">IV. Opsi Perbaikan</h3>
+                        <h3 className="font-semibold text-lg text-primary mt-8">{questionStructure.perbaikan.title}</h3>
                         {Object.keys(questionConfig.perbaikan).map(key => (
                             <div key={key}>
                                 <Label htmlFor={`perbaikan-${key}`} className="text-sm font-medium text-muted-foreground uppercase">{key}</Label>

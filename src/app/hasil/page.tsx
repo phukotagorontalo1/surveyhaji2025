@@ -22,8 +22,8 @@ export default function HasilPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary/50 p-6 rounded-lg">
               <div className="text-center">
-                  <h3 className="font-bold text-lg text-primary">Indeks Kepuasan (IKM)</h3>
-                  <p className="font-headline text-5xl font-bold text-primary my-2">85.75</p>
+                  <h3 className="font-bold text-lg text-primary">Indeks Informasi Haji (IIH)</h3>
+                  <p className="font-headline text-5xl font-bold text-primary my-2">88.50</p>
                   <p className="font-bold text-green-600">Sangat Baik</p>
               </div>
               <div className="text-center">
