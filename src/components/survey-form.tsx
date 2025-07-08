@@ -187,48 +187,47 @@ export function SurveyForm() {
     return () => unsubscribe();
   }, [toast]);
   
+  const activeConfig = config || DEFAULT_QUESTIONS;
+
   const informasiHajiQuestions = useMemo(() => {
-    if (!config || !config.informasiHaji) return {};
     return {
         "A. Kejelasan Informasi Tahapan Haji": [
-            { id: 'q1', label: config.informasiHaji.q1, ratings: KUALITAS_RATINGS },
-            { id: 'q2', label: config.informasiHaji.q2, ratings: KUALITAS_RATINGS },
-            { id: 'q3', label: config.informasiHaji.q3, ratings: KUALITAS_RATINGS },
+            { id: 'q1', label: activeConfig.informasiHaji.q1, ratings: KUALITAS_RATINGS },
+            { id: 'q2', label: activeConfig.informasiHaji.q2, ratings: KUALITAS_RATINGS },
+            { id: 'q3', label: activeConfig.informasiHaji.q3, ratings: KUALITAS_RATINGS },
         ],
         "B. Ketersediaan dan Akses Informasi": [
-            { id: 'q4', label: config.informasiHaji.q4, ratings: KUALITAS_RATINGS },
-            { id: 'q5', label: config.informasiHaji.q5, ratings: KUALITAS_RATINGS },
+            { id: 'q4', label: activeConfig.informasiHaji.q4, ratings: KUALITAS_RATINGS },
+            { id: 'q5', label: activeConfig.informasiHaji.q5, ratings: KUALITAS_RATINGS },
         ],
         "C. Waktu Penyampaian Informasi": [
-            { id: 'q6', label: config.informasiHaji.q6, ratings: KUALITAS_RATINGS },
-            { id: 'q7', label: config.informasiHaji.q7, ratings: KUALITAS_RATINGS },
+            { id: 'q6', label: activeConfig.informasiHaji.q6, ratings: KUALITAS_RATINGS },
+            { id: 'q7', label: activeConfig.informasiHaji.q7, ratings: KUALITAS_RATINGS },
         ],
         "D. Efektivitas Media dan Bimbingan": [
-            { id: 'q8', label: config.informasiHaji.q8, ratings: KUALITAS_RATINGS },
-            { id: 'q9', label: config.informasiHaji.q9, ratings: KUALITAS_RATINGS },
+            { id: 'q8', label: activeConfig.informasiHaji.q8, ratings: KUALITAS_RATINGS },
+            { id: 'q9', label: activeConfig.informasiHaji.q9, ratings: KUALITAS_RATINGS },
         ],
         "E. Kepuasan Umum": [
-            { id: 'q10', label: config.informasiHaji.q10, ratings: KUALITAS_RATINGS },
+            { id: 'q10', label: activeConfig.informasiHaji.q10, ratings: KUALITAS_RATINGS },
         ],
     };
-  }, [config]);
+  }, [activeConfig]);
 
   const penyimpanganQuestions = useMemo(() => {
-      if (!config || !config.penyimpangan) return [];
-      return Object.entries(config.penyimpangan).map(([id, label]) => ({ 
+      return Object.entries(activeConfig.penyimpangan).map(([id, label]) => ({ 
           id, 
-          label, 
+          label: label as string, 
           ratings: id === 'p5' ? KETERSEDIAAN_RATINGS : PENYIMPANGAN_RATINGS 
       }));
-  }, [config]);
+  }, [activeConfig]);
 
   const perbaikanItems = useMemo(() => {
-    if (!config || !config.perbaikan) return [];
-    const allItems = Object.entries(config.perbaikan).map(([id, label]) => ({ id, label: label as string }));
+    const allItems = Object.entries(activeConfig.perbaikan).map(([id, label]) => ({ id, label: label as string }));
     const tidakAdaItem = allItems.find(item => item.id === 'tidak_ada');
     const otherItems = allItems.filter(item => item.id !== 'tidak_ada');
     return tidakAdaItem ? [...otherItems, tidakAdaItem] : otherItems;
-  }, [config]);
+  }, [activeConfig]);
   
   const handleNextStep = async () => {
     let fieldsToValidate: FieldPath<FormSchemaType>[] = [];
@@ -538,3 +537,5 @@ export function SurveyForm() {
     </Form>
   )
 }
+
+    
