@@ -48,7 +48,7 @@ const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun"
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
 // Default ratings, can be overridden if needed in the future
-const KUALITAS_RATINGS = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Cukup", 4: "Setuju", 5: "Sangat Setuju" };
+const KUALITAS_RATINGS = { 1: "Sangat Tidak Setuju", 2: "Tidak Setuju", 3: "Netral", 4: "Setuju", 5: "Sangat Setuju" };
 const PENYIMPANGAN_RATINGS = { 1: "Selalu Ada", 2: "Sering Ada", 3: "Kadang Ada", 4: "Jarang Ada", 5: "Tidak Pernah Ada" };
 const KETERSEDIAAN_RATINGS = { 1: "Sangat Sulit", 2: "Sulit", 3: "Cukup", 4: "Mudah", 5: "Sangat Mudah" };
 
@@ -110,6 +110,7 @@ export function SurveyForm() {
 
   useEffect(() => {
     const fetchConfig = async () => {
+        setIsLoading(true);
         try {
             const configDoc = await getDoc(doc(db, "config", "questions"));
             if (configDoc.exists()) {
@@ -125,34 +126,28 @@ export function SurveyForm() {
         }
     };
 
-    const attemptSignInAndFetch = () => {
-        signInAnonymously(auth).then(() => {
-            // User is signed in.
-        }).catch((error) => {
-            console.error("Error signing in anonymously: ", error);
-            if (error.code === 'auth/operation-not-allowed') {
-                toast({
-                    variant: "destructive",
-                    title: "Login Anonim Belum Diaktifkan",
-                    description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
-                });
-            } else {
-                toast({
-                  variant: "destructive",
-                  title: "Gagal Terhubung",
-                  description: "Terjadi kesalahan koneksi. Mohon muat ulang halaman.",
-                });
-            }
-        });
-    };
-
     const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
         if (user) {
-            console.log("User is signed in anonymously:", user.uid);
+            // User is signed in.
             fetchConfig();
         } else {
-            console.log("User is signed out, attempting to sign in anonymously.");
-            attemptSignInAndFetch();
+            // No user is signed in. Attempt to sign in.
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously: ", error);
+                if (error.code === 'auth/operation-not-allowed') {
+                    toast({
+                        variant: "destructive",
+                        title: "Login Anonim Belum Diaktifkan",
+                        description: "Mohon aktifkan metode login 'Anonymous' di Firebase Console > Authentication > Sign-in method.",
+                    });
+                } else {
+                    toast({
+                      variant: "destructive",
+                      title: "Gagal Terhubung",
+                      description: "Terjadi kesalahan koneksi. Mohon muat ulang halaman.",
+                    });
+                }
+            });
         }
     });
 
@@ -332,6 +327,17 @@ export function SurveyForm() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    <div className="text-sm text-muted-foreground bg-secondary/50 p-4 rounded-md space-y-2">
+                        <p className="font-semibold text-foreground">Petunjuk:</p>
+                        <p>Silakan beri penilaian terhadap pernyataan-pernyataan berikut dengan memilih salah satu dari skala:</p>
+                        <ul className="list-decimal list-inside columns-2 sm:columns-3 md:columns-5 text-sm">
+                            <li>Sangat Tidak Setuju</li>
+                            <li>Tidak Setuju</li>
+                            <li>Netral</li>
+                            <li>Setuju</li>
+                            <li>Sangat Setuju</li>
+                        </ul>
+                    </div>
                     {Object.entries(informasiHajiQuestions).map(([sectionTitle, questions]) => (
                         <div key={sectionTitle}>
                             <h3 className="font-semibold text-primary mb-4">{sectionTitle}</h3>
