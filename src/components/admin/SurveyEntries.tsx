@@ -123,24 +123,20 @@ export default function SurveyEntries() {
     };
 
     const calculateScores = (survey: SurveyData) => {
-        if (!questionConfig || !survey.informasiHaji || !survey.rekomendasiPaspor) return { iih: 0, ikp: 0, ibv: 0, ipk: 0, imh: 0 };
-        const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
-        const iih = (informasiSum / (Object.keys(questionConfig.informasiHaji).length * 5)) * 100;
+        if (!questionConfig) return { iih: 0, ikp: 0, ibv: 0, ipk: 0, imh: 0 };
 
-        const pasporSum = Object.values(survey.rekomendasiPaspor).reduce((a, b) => a + b, 0);
-        const ikp = (pasporSum / (Object.keys(questionConfig.rekomendasiPaspor).length * 5)) * 100;
-        
-        const biovisaSum = survey.biovisa ? Object.values(survey.biovisa).reduce((a, b) => a + b, 0) : 0;
-        const biovisaQuestionCount = questionConfig.biovisa ? Object.keys(questionConfig.biovisa).length : 0;
-        const ibv = biovisaQuestionCount > 0 ? (biovisaSum / (biovisaQuestionCount * 5)) * 100 : 0;
+        const calculateIndex = (surveySection: { [key: string]: number } | undefined, configSection: { [key: string]: any } | undefined) => {
+            if (!surveySection || !configSection) return 0;
+            const sum = Object.values(surveySection).reduce((a, b) => a + b, 0);
+            const count = Object.keys(configSection).length;
+            return count > 0 ? (sum / (count * 5)) * 100 : 0;
+        };
 
-        const koperSum = survey.penjemputanKoper ? Object.values(survey.penjemputanKoper).reduce((a, b) => a + b, 0) : 0;
-        const koperQuestionCount = questionConfig.penjemputanKoper ? Object.keys(questionConfig.penjemputanKoper).length : 0;
-        const ipk = koperQuestionCount > 0 ? (koperSum / (koperQuestionCount * 5)) * 100 : 0;
-
-        const mobilisasiSum = survey.mobilisasi ? Object.values(survey.mobilisasi).reduce((a, b) => a + b, 0) : 0;
-        const mobilisasiQuestionCount = questionConfig.mobilisasi ? Object.keys(questionConfig.mobilisasi).length : 0;
-        const imh = mobilisasiQuestionCount > 0 ? (mobilisasiSum / (mobilisasiQuestionCount * 5)) * 100 : 0;
+        const iih = calculateIndex(survey.informasiHaji, questionConfig.informasiHaji);
+        const ikp = calculateIndex(survey.rekomendasiPaspor, questionConfig.rekomendasiPaspor);
+        const ibv = calculateIndex(survey.biovisa, questionConfig.biovisa);
+        const ipk = calculateIndex(survey.penjemputanKoper, questionConfig.penjemputanKoper);
+        const imh = calculateIndex(survey.mobilisasi, questionConfig.mobilisasi);
 
         return { iih, ikp, ibv, ipk, imh };
     };
@@ -197,23 +193,23 @@ export default function SurveyEntries() {
                 'Usia': s.usia,
                 'Jenis Kelamin': s.jenisKelamin,
                 'Pendidikan': s.pendidikan,
-                ...Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji - ${questionConfig.informasiHaji[k]}`,v])),
+                ...(s.informasiHaji && questionConfig.informasiHaji ? Object.fromEntries(Object.entries(s.informasiHaji).map(([k,v]) => [`Informasi Haji - ${questionConfig.informasiHaji[k] || k}`,v])) : {}),
                 'IIH': iih.toFixed(2),
                  'Saran Informasi Haji': s.saranInformasiHaji || '',
-                ...Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig.rekomendasiPaspor[k]}`,v])),
+                ...(s.rekomendasiPaspor && questionConfig.rekomendasiPaspor ? Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig.rekomendasiPaspor[k] || k}`,v])) : {}),
                 'IKP': ikp.toFixed(2),
                 'Saran Rekomendasi Paspor': s.saranRekomendasiPaspor || '',
-                ...(s.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa - ${questionConfig.biovisa[k]}`,v])) : {}),
+                ...(s.biovisa && questionConfig.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa - ${questionConfig.biovisa[k] || k}`,v])) : {}),
                 'IBV': ibv.toFixed(2),
                 'Saran Biovisa': s.saranBiovisa || '',
-                ...(s.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper - ${questionConfig.penjemputanKoper[k]}`,v])) : {}),
+                ...(s.penjemputanKoper && questionConfig.penjemputanKoper ? Object.fromEntries(Object.entries(s.penjemputanKoper).map(([k,v]) => [`Penjemputan Koper - ${questionConfig.penjemputanKoper[k] || k}`,v])) : {}),
                 'IPK': ipk.toFixed(2),
                 'Saran Penjemputan Koper': s.saranPenjemputanKoper || '',
-                ...(s.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi - ${questionConfig.mobilisasi[k]}`,v])) : {}),
+                ...(s.mobilisasi && questionConfig.mobilisasi ? Object.fromEntries(Object.entries(s.mobilisasi).map(([k,v]) => [`Mobilisasi - ${questionConfig.mobilisasi[k] || k}`,v])) : {}),
                 'IMH': imh.toFixed(2),
                 'Saran Mobilisasi': s.saranMobilisasi || '',
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
-                'Area Perbaikan': s.perbaikan.map(p => questionConfig.perbaikan[p] || p).join('; '),
+                'Area Perbaikan': s.perbaikan.map(p => (questionConfig.perbaikan as any)?.[p] || p).join('; '),
             };
             return flat;
         });
@@ -377,36 +373,40 @@ export default function SurveyEntries() {
                                                                         </div>
                                                                     </div>
                                                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                        <div>
-                                                                            <h4 className="font-bold text-lg mb-2">II. Jawaban Informasi Haji</h4>
-                                                                            <ul className="space-y-1 text-sm">
-                                                                                {Object.entries(survey.informasiHaji).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.informasiHaji[key]}:</span> <strong>{value}/5</strong></li>
-                                                                                ))}
-                                                                            </ul>
+                                                                        {survey.informasiHaji && questionConfig?.informasiHaji && (
                                                                             <div>
-                                                                                <p><strong>Saran:</strong></p>
-                                                                                <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranInformasiHaji || "Tidak ada saran."}</blockquote>
+                                                                                <h4 className="font-bold text-lg mb-2">II. Jawaban Informasi Haji</h4>
+                                                                                <ul className="space-y-1 text-sm">
+                                                                                    {Object.entries(survey.informasiHaji).map(([key, value]) => (
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.informasiHaji[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                                <div>
+                                                                                    <p><strong>Saran:</strong></p>
+                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranInformasiHaji || "Tidak ada saran."}</blockquote>
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="font-bold text-lg mb-2">III. Jawaban Rekomendasi Paspor</h4>
-                                                                            <ul className="space-y-1 text-sm">
-                                                                                {Object.entries(survey.rekomendasiPaspor).map(([key, value]) => (
-                                                                                    <li key={key} className="flex justify-between"><span>{questionConfig.rekomendasiPaspor[key]}:</span> <strong>{value}/5</strong></li>
-                                                                                ))}
-                                                                            </ul>
+                                                                        )}
+                                                                        {survey.rekomendasiPaspor && questionConfig?.rekomendasiPaspor && (
                                                                             <div>
-                                                                                <p><strong>Saran:</strong></p>
-                                                                                <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranRekomendasiPaspor || "Tidak ada saran."}</blockquote>
+                                                                                <h4 className="font-bold text-lg mb-2">III. Jawaban Rekomendasi Paspor</h4>
+                                                                                <ul className="space-y-1 text-sm">
+                                                                                    {Object.entries(survey.rekomendasiPaspor).map(([key, value]) => (
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.rekomendasiPaspor[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                                <div>
+                                                                                    <p><strong>Saran:</strong></p>
+                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranRekomendasiPaspor || "Tidak ada saran."}</blockquote>
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                        {survey.biovisa && questionConfig.biovisa && (
+                                                                        )}
+                                                                        {survey.biovisa && questionConfig?.biovisa && (
                                                                             <div>
                                                                                 <h4 className="font-bold text-lg mb-2">IV. Jawaban Biovisa</h4>
                                                                                 <ul className="space-y-1 text-sm">
                                                                                     {Object.entries(survey.biovisa).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.biovisa[key]}:</span> <strong>{value}/5</strong></li>
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.biovisa[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
                                                                                     ))}
                                                                                 </ul>
                                                                                 <div>
@@ -415,12 +415,12 @@ export default function SurveyEntries() {
                                                                                 </div>
                                                                             </div>
                                                                         )}
-                                                                        {survey.penjemputanKoper && questionConfig.penjemputanKoper && (
+                                                                        {survey.penjemputanKoper && questionConfig?.penjemputanKoper && (
                                                                             <div>
                                                                                 <h4 className="font-bold text-lg mb-2">V. Jawaban Penjemputan Koper</h4>
                                                                                 <ul className="space-y-1 text-sm">
                                                                                     {Object.entries(survey.penjemputanKoper).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.penjemputanKoper[key]}:</span> <strong>{value}/5</strong></li>
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.penjemputanKoper[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
                                                                                     ))}
                                                                                 </ul>
                                                                                 <div>
@@ -429,12 +429,12 @@ export default function SurveyEntries() {
                                                                                 </div>
                                                                             </div>
                                                                         )}
-                                                                         {survey.mobilisasi && questionConfig.mobilisasi && (
+                                                                         {survey.mobilisasi && questionConfig?.mobilisasi && (
                                                                             <div>
                                                                                 <h4 className="font-bold text-lg mb-2">VI. Jawaban Mobilisasi</h4>
                                                                                 <ul className="space-y-1 text-sm">
                                                                                     {Object.entries(survey.mobilisasi).map(([key, value]) => (
-                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.mobilisasi[key]}:</span> <strong>{value}/5</strong></li>
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.mobilisasi[key] || `Pertanyaan ${key}`}:</span> <strong>{value}/5</strong></li>
                                                                                     ))}
                                                                                 </ul>
                                                                                 <div>
@@ -447,7 +447,7 @@ export default function SurveyEntries() {
                                                                     <div>
                                                                         <h4 className="font-bold text-lg mb-2">VII. Evaluasi & Verifikasi</h4>
                                                                         <div className="space-y-2 text-sm">
-                                                                            <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => questionConfig.perbaikan[p] || p).join(', ')}</p>
+                                                                            <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => (questionConfig?.perbaikan as any)?.[p] || p).join(', ')}</p>
                                                                             <div className="flex items-center gap-2">
                                                                                 <p><strong>Pernyataan mandiri:</strong></p>
                                                                                 {survey.tidakDiarahkan ? (
