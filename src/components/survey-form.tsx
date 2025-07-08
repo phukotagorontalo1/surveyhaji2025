@@ -44,7 +44,7 @@ import { SignaturePad } from "@/components/signature-pad"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Progress } from "@/components/ui/progress"
 
-const PEKERJAAN_OPTIONS = ["Pelajar/Mahasiswa", "PNS", "BUMN/BUMD", "Swasta", "Pedagang", "Tani/Nelayan", "Ibu Rumah Tangga", "Lainnya"];
+const PEKERJAAN_OPTIONS = ["Pelajar/Mahasiswa", "PNS", "TNI/POLRI", "BUMN/BUMD", "Swasta", "Pedagang", "Tani/Nelayan", "Ibu Rumah Tangga", "Lainnya"];
 const USIA_OPTIONS = ["18-20 tahun", "21-30 tahun", "31-40 tahun", "41-50 tahun", "51-60 tahun", "Di atas 60 tahun"];
 const PENDIDIKAN_OPTIONS = ["Sekolah Dasar (SD)", "Sekolah Menengah Pertama (SMP)", "Sekolah Menengah Atas (SMA)", "Strata 1 (S1)", "Strata 2 (S2)", "Strata 3 (S3)"];
 
