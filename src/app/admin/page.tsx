@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sidebar, SidebarProvider, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset } from "@/components/ui/sidebar"
@@ -147,6 +147,11 @@ export default function AdminPage() {
                             </Button>
                         </form>
                     </CardContent>
+                    <CardFooter>
+                        <p className="w-full text-center text-xs text-muted-foreground">
+                            Petunjuk: Passwordnya adalah "<strong>admin</strong>".
+                        </p>
+                    </CardFooter>
                 </Card>
             </div>
         );
