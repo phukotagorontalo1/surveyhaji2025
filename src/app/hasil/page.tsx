@@ -7,7 +7,7 @@ import Link from "next/link";
 export default function HasilPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg text-center shadow-2xl animate-in fade-in zoom-in-95">
+      <Card className="w-full max-w-2xl text-center shadow-2xl animate-in fade-in zoom-in-95">
         <CardHeader>
             <div className="mx-auto bg-green-100 rounded-full p-4 w-fit">
                 <CheckCircle2 className="h-16 w-16 text-green-600" />
@@ -21,7 +21,7 @@ export default function HasilPage() {
             Terima kasih telah berpartisipasi dalam Survey Kepuasan Masyarakat Pelayanan Haji dan Rekomendasi Paspor. Masukan Anda sangat berharga bagi kami untuk perbaikan layanan di masa mendatang.
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary/50 p-6 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-secondary/50 p-6 rounded-lg">
               <div className="text-center">
                   <h3 className="font-bold text-lg text-primary">Indeks Informasi Haji (IIH)</h3>
                   <p className="font-headline text-5xl font-bold text-primary my-2">88.50</p>
@@ -30,6 +30,11 @@ export default function HasilPage() {
               <div className="text-center">
                   <h3 className="font-bold text-lg text-primary">Indeks Kepuasan Paspor (IKP)</h3>
                   <p className="font-headline text-5xl font-bold text-primary my-2">92.50</p>
+                  <p className="font-bold text-green-600">Sangat Baik</p>
+              </div>
+              <div className="text-center">
+                  <h3 className="font-bold text-lg text-primary">Indeks Biovisa (IBV)</h3>
+                  <p className="font-headline text-5xl font-bold text-primary my-2">90.75</p>
                   <p className="font-bold text-green-600">Sangat Baik</p>
               </div>
           </div>
@@ -46,5 +51,3 @@ export default function HasilPage() {
     </div>
   );
 }
-
-    

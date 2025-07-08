@@ -16,6 +16,7 @@ interface SurveyData {
     id: string;
     informasiHaji: { [key: string]: number };
     rekomendasiPaspor: { [key: string]: number };
+    biovisa?: { [key: string]: number };
     createdAt: Timestamp;
     [key: string]: any;
 }
@@ -23,11 +24,12 @@ interface SurveyData {
 interface CalculatedScores {
     iih: number;
     ikp: number;
+    ibv: number;
 }
 
 export function DashboardDisplay() {
     const [surveys, setSurveys] = useState<SurveyData[]>([]);
-    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ikp: 0 });
+    const [scores, setScores] = useState<CalculatedScores>({ iih: 0, ikp: 0, ibv: 0 });
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [questionConfig, setQuestionConfig] = useState<any>(null);
@@ -89,10 +91,14 @@ export function DashboardDisplay() {
     const calculateMetrics = (data: SurveyData[], config: any) => {
         let totalIihScore = 0;
         let totalIkpScore = 0;
+        let totalIbvScore = 0;
         const informasiQuestionKeys = Object.keys(config.informasiHaji || {});
         const pasporQuestionKeys = Object.keys(config.rekomendasiPaspor || {});
+        const biovisaQuestionKeys = Object.keys(config.biovisa || {});
 
         const informasiTotals: { [key: string]: number } = informasiQuestionKeys.reduce((acc, key) => ({...acc, [key]: 0}), {});
+
+        const surveysWithBiovisa = data.filter(s => s.biovisa);
 
         data.forEach(survey => {
             if (survey.informasiHaji) {
@@ -102,6 +108,10 @@ export function DashboardDisplay() {
             if (survey.rekomendasiPaspor) {
                 const pasporSum = Object.values(survey.rekomendasiPaspor).reduce((a, b) => a + b, 0);
                 totalIkpScore += (pasporSum / (pasporQuestionKeys.length * 5)) * 100;
+            }
+            if (survey.biovisa) {
+                const biovisaSum = Object.values(survey.biovisa).reduce((a, b) => a + b, 0);
+                totalIbvScore += (biovisaSum / (biovisaQuestionKeys.length * 5)) * 100;
             }
             
             Object.keys(informasiTotals).forEach(key => {
@@ -113,6 +123,7 @@ export function DashboardDisplay() {
         setScores({
             iih: numSurveys > 0 ? totalIihScore / numSurveys : 0,
             ikp: numSurveys > 0 ? totalIkpScore / numSurveys : 0,
+            ibv: surveysWithBiovisa.length > 0 ? totalIbvScore / surveysWithBiovisa.length : 0,
         });
 
         const newChartData = Object.keys(informasiTotals).map(key => ({
@@ -140,8 +151,10 @@ export function DashboardDisplay() {
                 pendidikan: s.pendidikan,
                 ...Object.fromEntries(Object.entries(s.informasiHaji || {}).map(([k,v]) => [`informasiHaji_${k}`,v])),
                 ...Object.fromEntries(Object.entries(s.rekomendasiPaspor || {}).map(([k,v]) => [`rekomendasiPaspor_${k}`,v])),
+                ...Object.fromEntries(Object.entries(s.biovisa || {}).map(([k,v]) => [`biovisa_${k}`,v])),
                 saranInformasiHaji: s.saranInformasiHaji || '',
                 saranRekomendasiPaspor: s.saranRekomendasiPaspor || '',
+                saranBiovisa: s.saranBiovisa || '',
                 tidakDiarahkan: s.tidakDiarahkan,
                 perbaikan: s.perbaikan.join('; '),
                 createdAt: s.createdAt.toDate().toISOString(),
@@ -191,9 +204,10 @@ export function DashboardDisplay() {
     if (loading) {
         return (
              <div className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                     <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-4 w-32" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
+                    <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-7 w-16" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-4 w-28" /></CardHeader><CardContent><Skeleton className="h-7 w-10" /></CardContent></Card>
                 </div>
                 <Card><CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent><Skeleton className="h-[350px] w-full" /></CardContent></Card>
@@ -217,7 +231,7 @@ export function DashboardDisplay() {
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Indeks Informasi Haji (IIH)</CardTitle>
@@ -235,6 +249,16 @@ export function DashboardDisplay() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{scores.ikp.toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Indeks Biovisa (IBV)</CardTitle>
+                        <AreaChart className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{scores.ibv.toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">Nilai rata-rata dari semua responden</p>
                     </CardContent>
                 </Card>
@@ -311,5 +335,3 @@ export function DashboardDisplay() {
         </div>
     )
 }
-
-    

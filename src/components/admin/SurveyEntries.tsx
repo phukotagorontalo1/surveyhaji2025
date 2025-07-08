@@ -22,6 +22,7 @@ interface SurveyData {
     id: string;
     informasiHaji: { [key: string]: number };
     rekomendasiPaspor: { [key: string]: number };
+    biovisa?: { [key: string]: number };
     createdAt: Timestamp;
     nama?: string;
     nomorHp?: string;
@@ -33,6 +34,7 @@ interface SurveyData {
     perbaikan: string[];
     saranInformasiHaji?: string;
     saranRekomendasiPaspor?: string;
+    saranBiovisa?: string;
     tandaTangan: string;
 }
 
@@ -117,14 +119,18 @@ export default function SurveyEntries() {
     };
 
     const calculateScores = (survey: SurveyData) => {
-        if (!questionConfig || !survey.informasiHaji || !survey.rekomendasiPaspor) return { iih: 0, ikp: 0 };
+        if (!questionConfig || !survey.informasiHaji || !survey.rekomendasiPaspor) return { iih: 0, ikp: 0, ibv: 0 };
         const informasiSum = Object.values(survey.informasiHaji).reduce((a, b) => a + b, 0);
         const iih = (informasiSum / (Object.keys(questionConfig.informasiHaji).length * 5)) * 100;
 
         const pasporSum = Object.values(survey.rekomendasiPaspor).reduce((a, b) => a + b, 0);
         const ikp = (pasporSum / (Object.keys(questionConfig.rekomendasiPaspor).length * 5)) * 100;
         
-        return { iih, ikp };
+        const biovisaSum = survey.biovisa ? Object.values(survey.biovisa).reduce((a, b) => a + b, 0) : 0;
+        const biovisaQuestionCount = questionConfig.biovisa ? Object.keys(questionConfig.biovisa).length : 0;
+        const ibv = biovisaQuestionCount > 0 ? (biovisaSum / (biovisaQuestionCount * 5)) * 100 : 0;
+
+        return { iih, ikp, ibv };
     };
 
     const sortedAndFilteredSurveys = useMemo(() => {
@@ -136,9 +142,9 @@ export default function SurveyEntries() {
 
         filtered.sort((a, b) => {
             let valA, valB;
-            if (sortConfig.key === 'iih' || sortConfig.key === 'ikp') {
-                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ikp'];
-                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ikp'];
+            if (sortConfig.key === 'iih' || sortConfig.key === 'ikp' || sortConfig.key === 'ibv') {
+                valA = calculateScores(a)[sortConfig.key as 'iih' | 'ikp' | 'ibv'];
+                valB = calculateScores(b)[sortConfig.key as 'iih' | 'ikp' | 'ibv'];
             } else if (sortConfig.key === 'nama') {
                 valA = a.nama?.toLowerCase() || 'zzz';
                 valB = b.nama?.toLowerCase() || 'zzz';
@@ -169,7 +175,7 @@ export default function SurveyEntries() {
         }
 
         const flattenedData = sortedAndFilteredSurveys.map(s => {
-            const { iih, ikp } = calculateScores(s);
+            const { iih, ikp, ibv } = calculateScores(s);
             const flat: {[key: string]: any} = {
                 id: s.id,
                 'Tanggal Input': s.createdAt.toDate().toISOString(),
@@ -185,6 +191,9 @@ export default function SurveyEntries() {
                 ...Object.fromEntries(Object.entries(s.rekomendasiPaspor).map(([k,v]) => [`Rekomendasi Paspor - ${questionConfig.rekomendasiPaspor[k]}`,v])),
                 'IKP': ikp.toFixed(2),
                 'Saran Rekomendasi Paspor': s.saranRekomendasiPaspor || '',
+                ...(s.biovisa ? Object.fromEntries(Object.entries(s.biovisa).map(([k,v]) => [`Biovisa - ${questionConfig.biovisa[k]}`,v])) : {}),
+                'IBV': ibv.toFixed(2),
+                'Saran Biovisa': s.saranBiovisa || '',
                 'Pernyataan Mandiri': s.tidakDiarahkan ? 'Ya' : 'Tidak',
                 'Area Perbaikan': s.perbaikan.map(p => questionConfig.perbaikan[p] || p).join('; '),
             };
@@ -268,6 +277,8 @@ export default function SurveyEntries() {
                                     <SelectItem value="iih-asc">IIH Terendah</SelectItem>
                                     <SelectItem value="ikp-desc">IKP Tertinggi</SelectItem>
                                     <SelectItem value="ikp-asc">IKP Terendah</SelectItem>
+                                    <SelectItem value="ibv-desc">IBV Tertinggi</SelectItem>
+                                    <SelectItem value="ibv-asc">IBV Terendah</SelectItem>
                                     <SelectItem value="nama-asc">Nama (A-Z)</SelectItem>
                                     <SelectItem value="nama-desc">Nama (Z-A)</SelectItem>
                                 </SelectContent>
@@ -293,12 +304,13 @@ export default function SurveyEntries() {
                                         <TableHead>Tanggal</TableHead>
                                         <TableHead>IIH</TableHead>
                                         <TableHead>IKP</TableHead>
+                                        <TableHead>IBV</TableHead>
                                         <TableHead className="text-right">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {paginatedSurveys.map(survey => {
-                                        const { iih, ikp } = calculateScores(survey);
+                                        const { iih, ikp, ibv } = calculateScores(survey);
                                         return (
                                         <TableRow key={survey.id}>
                                             <TableCell>
@@ -308,6 +320,7 @@ export default function SurveyEntries() {
                                             <TableCell>{survey.createdAt.toDate().toLocaleString('id-ID')}</TableCell>
                                             <TableCell>{iih.toFixed(2)}</TableCell>
                                             <TableCell>{ikp.toFixed(2)}</TableCell>
+                                            <TableCell>{ibv.toFixed(2)}</TableCell>
                                             <TableCell>
                                                 <div className="flex justify-end gap-2">
                                                     <Dialog>
@@ -337,7 +350,7 @@ export default function SurveyEntries() {
                                                                             <p><strong>Pendidikan:</strong> {survey.pendidikan}</p>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                                         <div>
                                                                             <h4 className="font-bold text-lg mb-2">II. Jawaban Informasi Haji</h4>
                                                                             <ul className="space-y-1 text-sm">
@@ -362,9 +375,23 @@ export default function SurveyEntries() {
                                                                                 <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranRekomendasiPaspor || "Tidak ada saran."}</blockquote>
                                                                             </div>
                                                                         </div>
+                                                                        {survey.biovisa && questionConfig.biovisa && (
+                                                                            <div>
+                                                                                <h4 className="font-bold text-lg mb-2">IV. Jawaban Biovisa</h4>
+                                                                                <ul className="space-y-1 text-sm">
+                                                                                    {Object.entries(survey.biovisa).map(([key, value]) => (
+                                                                                        <li key={key} className="flex justify-between"><span>{questionConfig.biovisa[key]}:</span> <strong>{value}/5</strong></li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                                <div>
+                                                                                    <p><strong>Saran:</strong></p>
+                                                                                    <blockquote className="border-l-2 pl-4 italic text-muted-foreground">{survey.saranBiovisa || "Tidak ada saran."}</blockquote>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                     <div>
-                                                                        <h4 className="font-bold text-lg mb-2">IV. Evaluasi & Verifikasi</h4>
+                                                                        <h4 className="font-bold text-lg mb-2">V. Evaluasi & Verifikasi</h4>
                                                                         <div className="space-y-2 text-sm">
                                                                             <p><strong>Area Perbaikan:</strong> {survey.perbaikan.map(p => questionConfig.perbaikan[p] || p).join(', ')}</p>
                                                                             <div className="flex items-center gap-2">
@@ -436,5 +463,3 @@ export default function SurveyEntries() {
         </div>
     );
 }
-
-    
