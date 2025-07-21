@@ -167,9 +167,9 @@ export function DashboardDisplay() {
         const koperQuestionKeys = Object.keys(config.penjemputanKoper || {});
         const mobilisasiQuestionKeys = Object.keys(config.mobilisasi || {});
 
-        const surveysWithBiovisa = data.filter(s => s.biovisa);
-        const surveysWithKoper = data.filter(s => s.penjemputanKoper);
-        const surveysWithMobilisasi = data.filter(s => s.mobilisasi);
+        const surveysWithBiovisa = data.filter(s => s.biovisa && Object.keys(s.biovisa).length > 0);
+        const surveysWithKoper = data.filter(s => s.penjemputanKoper && Object.keys(s.penjemputanKoper).length > 0);
+        const surveysWithMobilisasi = data.filter(s => s.mobilisasi && Object.keys(s.mobilisasi).length > 0);
 
         data.forEach(survey => {
             if (survey.informasiHaji && informasiQuestionKeys.length > 0) {
@@ -222,10 +222,6 @@ export function DashboardDisplay() {
 
         const flattenedData = surveys.map(s => {
             const flat: {[key: string]: any} = {
-                pekerjaan: s.pekerjaan,
-                usia: s.usia,
-                jenisKelamin: s.jenisKelamin,
-                pendidikan: s.pendidikan,
                 ...Object.fromEntries(Object.entries(s.informasiHaji || {}).map(([k,v]) => [`informasiHaji_${k}`,v])),
                 ...Object.fromEntries(Object.entries(s.rekomendasiPaspor || {}).map(([k,v]) => [`rekomendasiPaspor_${k}`,v])),
                 ...Object.fromEntries(Object.entries(s.biovisa || {}).map(([k,v]) => [`biovisa_${k}`,v])),
@@ -443,18 +439,12 @@ export function DashboardDisplay() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Tanggal</TableHead>
-                                    <TableHead>Pekerjaan</TableHead>
-                                    <TableHead>Usia</TableHead>
-                                    <TableHead>Jenis Kelamin</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {surveys.map((survey) => (
                                     <TableRow key={survey.id}>
                                         <TableCell>{survey.createdAt.toDate().toLocaleDateString('id-ID')}</TableCell>
-                                        <TableCell>{survey.pekerjaan}</TableCell>
-                                        <TableCell>{survey.usia}</TableCell>
-                                        <TableCell>{survey.jenisKelamin}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -465,3 +455,5 @@ export function DashboardDisplay() {
         </div>
     )
 }
+
+    
