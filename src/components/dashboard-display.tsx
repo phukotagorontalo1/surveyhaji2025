@@ -222,7 +222,6 @@ export function DashboardDisplay() {
 
         const flattenedData = surveys.map(s => {
             const flat: {[key: string]: any} = {
-                id: s.id,
                 pekerjaan: s.pekerjaan,
                 usia: s.usia,
                 jenisKelamin: s.jenisKelamin,
